@@ -122,7 +122,7 @@ impl Cell {
         return Cell {
             posx: x,
             posy: y,
-            state: state,
+            state,
         };
     }
 

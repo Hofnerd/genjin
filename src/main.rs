@@ -21,7 +21,8 @@ fn dummy_texture<'a>(
     enum TextureColor {
         Yellow,
         White,
-    };
+    }
+
     let mut st1 = texture_creator
         .create_texture_target(None, SQUARE_SIZE, SQUARE_SIZE)
         .map_err(|e| e.to_string())?;
