@@ -1,3 +1,7 @@
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::thread;
+
+use gameoflife::GameOfLife;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
@@ -10,9 +14,21 @@ use crate::gameoflife::CellState;
 
 mod gameoflife;
 
-pub const SQUARE_SIZE: u32 = 40;
-pub const GAME_FIELD_WIDTH: u32 = 40;
-pub const GAME_FIELD_HEIGHT: u32 = 40;
+pub const SQUARE_SIZE: u32 = 15;
+pub const GAME_FIELD_WIDTH: u32 = 50;
+pub const GAME_FIELD_HEIGHT: u32 = 50;
+
+#[derive(Debug)]
+struct GameStateMsg {
+    game: GameOfLife,
+    frame: u64,
+    thread_closed: bool,
+}
+
+#[derive(Debug)]
+struct EventListMsg {
+    events: Vec<Event>,
+}
 
 fn dummy_texture<'a>(
     canvas: &mut Canvas<Window>,
@@ -101,44 +117,13 @@ fn dummy_texture<'a>(
     return Ok((st1, st2));
 }
 
-pub fn main() -> Result<(), String> {
-    let sdl_context = sdl2::init()?;
-    let video_subsystem = sdl_context.video()?;
-
-    let window = video_subsystem
-        .window(
-            "Rust SDL2 Demo: Game of life",
-            SQUARE_SIZE * GAME_FIELD_WIDTH,
-            SQUARE_SIZE * GAME_FIELD_HEIGHT,
-        )
-        .position_centered()
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let mut canvas = window
-        .into_canvas()
-        .target_texture()
-        .present_vsync()
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    println!("Using SDL_Render \"{}\"", canvas.info().name);
-
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.clear();
-    canvas.present();
-
-    let tc: TextureCreator<_> = canvas.texture_creator();
-
-    let (st1, st2) = dummy_texture(&mut canvas, &tc)?;
-
-    let mut game = gameoflife::GameOfLife::new();
-
-    let mut event_pump = sdl_context.event_pump()?;
-
-    let mut frame: u32 = 0;
+// Thread to perform the game operations
+fn game_thread(rx: Receiver<EventListMsg>, tx: Sender<GameStateMsg>) -> Result<(), String> {
+    let mut game = GameOfLife::new();
+    let mut frame: u64 = 0;
     'running: loop {
-        for event in event_pump.poll_iter() {
+        let recv = rx.recv().map_err(|e| e.to_string())?;
+        for event in recv.events.into_iter() {
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
@@ -175,6 +160,94 @@ pub fn main() -> Result<(), String> {
             game.update();
             frame = 0;
         }
+        let gmsg: GameStateMsg = GameStateMsg {
+            game: game.clone(),
+            frame,
+            thread_closed: false,
+        };
+
+        let _ = tx.send(gmsg);
+
+        if let gameoflife::GameState::Playing = game.state {
+            frame += 1;
+        }
+    }
+    let gmsg: GameStateMsg = GameStateMsg {
+        game: game.clone(),
+        frame,
+        thread_closed: true,
+    };
+
+    let _ = tx.send(gmsg);
+
+    return Ok(());
+}
+
+pub fn main() -> Result<(), String> {
+    let sdl_context = sdl2::init()?;
+    let video_subsystem = sdl_context.video()?;
+
+    let (gs_tx, gs_rx) = mpsc::channel::<GameStateMsg>();
+    let (el_tx, el_rx) = mpsc::channel::<EventListMsg>();
+
+    let window = video_subsystem
+        .window(
+            "Rust SDL2 Demo: Game of life",
+            SQUARE_SIZE * GAME_FIELD_WIDTH,
+            SQUARE_SIZE * GAME_FIELD_HEIGHT,
+        )
+        .position_centered()
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let mut canvas = window
+        .into_canvas()
+        .target_texture()
+        .present_vsync()
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    println!("Using SDL_Render \"{}\"", canvas.info().name);
+    println!("Spawning Game Logic Thread");
+    let mut event_pump = sdl_context.event_pump()?;
+    let _ = thread::Builder::new()
+        .stack_size(32 * 1024 * 1024)
+        .name("GameThread".to_string())
+        .spawn(move || {
+            let _ = game_thread(el_rx, gs_tx);
+        })
+        .map_err(|e| e.to_string())?;
+    canvas.set_draw_color(Color::RGB(0, 0, 0));
+    canvas.clear();
+    canvas.present();
+
+    let tc: TextureCreator<_> = canvas.texture_creator();
+    let (st1, st2) = dummy_texture(&mut canvas, &tc)?;
+
+    'running: loop {
+        let mut events: Vec<Event> = Vec::<Event>::new();
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => {
+                    events = vec![event.clone()];
+                    let elmsg = EventListMsg { events };
+                    let _ = el_tx.send(elmsg);
+                    break 'running;
+                }
+                _ => events.push(event),
+            }
+        }
+
+        let elmsg = EventListMsg { events };
+        let _ = el_tx.send(elmsg);
+
+        let recv = gs_rx.recv().map_err(|e| e.to_string())?;
+        let game = recv.game;
+        let frame = recv.frame;
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
@@ -195,10 +268,12 @@ pub fn main() -> Result<(), String> {
             }
         }
         canvas.present();
-        if let gameoflife::GameState::Playing = game.state {
-            frame += 1;
-        }
     }
 
-    return Ok(());
+    let recv = gs_rx.recv().map_err(|e| e.to_string())?;
+    if recv.thread_closed {
+        return Ok(());
+    } else {
+        return Err("Thread Fialed to close".to_string());
+    }
 }
