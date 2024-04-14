@@ -95,12 +95,12 @@ impl GameOfLife {
                             }
                         }
                     }
-                    if count > 3 || count < 2 {
+                    if count < 2 {
+                        cell.state = CellState::Dead;
+                    } else if count > 3 {
                         cell.state = CellState::Dead;
                     } else if count == 3 {
                         cell.state = CellState::Alive;
-                    } else if count == 2 {
-                        cell.state = cell.state;
                     }
                 }
                 self.field = tmp_field;

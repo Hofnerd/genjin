@@ -1,4 +1,5 @@
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::path::Path;
+use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::thread;
 
 use gameoflife::GameOfLife;
@@ -7,7 +8,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
-use sdl2::render::{Canvas, Texture, TextureCreator};
+use sdl2::render::{Canvas, Texture, TextureCreator, TextureQuery};
 use sdl2::video::{Window, WindowContext};
 
 use crate::gameoflife::CellState;
@@ -17,6 +18,11 @@ mod gameoflife;
 pub const SQUARE_SIZE: u32 = 15;
 pub const GAME_FIELD_WIDTH: u32 = 50;
 pub const GAME_FIELD_HEIGHT: u32 = 50;
+
+macro_rules! rect( ($x:expr, $y:expr, $w:expr, $h:expr) => (
+        Rect::new($x as i32, $y as i32, $w as u32, $h as u32)
+    )
+);
 
 #[derive(Debug)]
 struct GameStateMsg {
@@ -118,7 +124,7 @@ fn dummy_texture<'a>(
 }
 
 // Thread to perform the game operations
-fn game_thread(rx: Receiver<EventListMsg>, tx: Sender<GameStateMsg>) -> Result<(), String> {
+fn game_thread(rx: Receiver<EventListMsg>, tx: SyncSender<GameStateMsg>) -> Result<(), String> {
     let mut game = GameOfLife::new();
     let mut frame: u64 = 0;
     'running: loop {
@@ -183,12 +189,35 @@ fn game_thread(rx: Receiver<EventListMsg>, tx: Sender<GameStateMsg>) -> Result<(
     return Ok(());
 }
 
+fn get_centered_rect(width: u32, height: u32, cons_width: u32, cons_height: u32) -> Rect {
+    let wr = width as f32 / cons_width as f32;
+    let hr = height as f32 / cons_height as f32;
+
+    let (w, h) = if wr > 1f32 || hr > 1f32 {
+        if wr > hr {
+            let h = (height as f32 / wr) as i32;
+            (cons_width as i32, h)
+        } else {
+            let w = (width as f32 / hr) as i32;
+            (w, cons_height as i32)
+        }
+    } else {
+        (width as i32, height as i32)
+    };
+
+    let cx = (GAME_FIELD_WIDTH as i32 - w) / 2;
+    let cy = (GAME_FIELD_HEIGHT as i32 - h) / 2;
+
+    return rect!(cx, cy, w, h);
+}
+
 pub fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
+    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
-    let (gs_tx, gs_rx) = mpsc::channel::<GameStateMsg>();
-    let (el_tx, el_rx) = mpsc::channel::<EventListMsg>();
+    let (gs_tx, gs_rx) = mpsc::sync_channel::<GameStateMsg>(10);
+    let (el_tx, el_rx) = mpsc::sync_channel::<EventListMsg>(10);
 
     let window = video_subsystem
         .window(
@@ -207,8 +236,11 @@ pub fn main() -> Result<(), String> {
         .build()
         .map_err(|e| e.to_string())?;
 
-    println!("Using SDL_Render \"{}\"", canvas.info().name);
-    println!("Spawning Game Logic Thread");
+    let tc: TextureCreator<_> = canvas.texture_creator();
+    let (st1, st2) = dummy_texture(&mut canvas, &tc)?;
+
+    let font = ttf_context.load_font(Path::new("/usr/share/fonts/TTF/DejaVuSans.ttf"), 128)?;
+
     let mut event_pump = sdl_context.event_pump()?;
     let _ = thread::Builder::new()
         .stack_size(32 * 1024 * 1024)
@@ -220,9 +252,6 @@ pub fn main() -> Result<(), String> {
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
     canvas.present();
-
-    let tc: TextureCreator<_> = canvas.texture_creator();
-    let (st1, st2) = dummy_texture(&mut canvas, &tc)?;
 
     'running: loop {
         let mut events: Vec<Event> = Vec::<Event>::new();
@@ -267,6 +296,24 @@ pub fn main() -> Result<(), String> {
                 )?;
             }
         }
+        let surface = font
+            .render(frame.to_string().as_str())
+            .blended(Color::RGBA(255, 0, 0, 255))
+            .map_err(|e| e.to_string())?;
+
+        let font_texture = tc
+            .create_texture_from_surface(surface)
+            .map_err(|e| e.to_string())?;
+        let TextureQuery { width, height, .. } = font_texture.query();
+
+        let padding = 2;
+        let target = get_centered_rect(
+            width,
+            height,
+            GAME_FIELD_WIDTH - padding,
+            GAME_FIELD_HEIGHT - padding,
+        );
+        canvas.copy(&font_texture, None, Some(target))?;
         canvas.present();
     }
 
