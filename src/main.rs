@@ -1,27 +1,30 @@
 use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::thread;
+use std::time::Duration;
 
-use gameoflife::GameOfLife;
 use sdl2::event::Event;
+use sdl2::image::{self, InitFlag, LoadTexture};
 use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
-use sdl2::render::{Canvas, Texture, TextureCreator};
-use sdl2::video::{Window, WindowContext};
-
-use crate::gameoflife::CellState;
+use sdl2::render::{Texture, TextureCreator, WindowCanvas};
+use spriteengine::Sprite;
 
 mod gameoflife;
+mod spriteengine;
 
 pub const SQUARE_SIZE: u32 = 15;
 pub const GAME_FIELD_WIDTH: u32 = 50;
 pub const GAME_FIELD_HEIGHT: u32 = 50;
 
-#[derive(Debug)]
+macro_rules! rect( ($x:expr, $y:expr, $w:expr, $h:expr) => (
+        Rect::new($x as i32, $y as i32, $w as u32, $h as u32)
+    )
+);
+
+#[derive(Debug, Clone)]
 struct GameStateMsg {
-    game: GameOfLife,
-    frame: u64,
+    sprites: Vec<Sprite>,
     thread_closed: bool,
 }
 
@@ -30,7 +33,7 @@ struct EventListMsg {
     events: Vec<Event>,
 }
 
-fn dummy_texture<'a>(
+/*fn dummy_texture<'a>(
     canvas: &mut Canvas<Window>,
     texture_creator: &'a TextureCreator<WindowContext>,
 ) -> Result<(Texture<'a>, Texture<'a>), String> {
@@ -115,12 +118,23 @@ fn dummy_texture<'a>(
     }
 
     return Ok((st1, st2));
-}
+}*/
 
 // Thread to perform the game operations
 fn game_thread(rx: Receiver<EventListMsg>, tx: SyncSender<GameStateMsg>) -> Result<(), String> {
-    let mut game = GameOfLife::new();
-    let mut frame: u64 = 0;
+    //  let mut game = GameOfLife::new();
+    let mut game = GameStateMsg {
+        sprites: Vec::<Sprite>::new(),
+        thread_closed: false,
+    };
+
+    game.sprites.push(Sprite::new(
+        Point::new(0, 0),
+        rect!(48, 61, 22, 67),
+        "assets/fire_wizard/Walk.png".into(),
+        10,
+    ));
+
     'running: loop {
         let recv = rx.recv().map_err(|e| e.to_string())?;
         for event in recv.events.into_iter() {
@@ -131,61 +145,76 @@ fn game_thread(rx: Receiver<EventListMsg>, tx: SyncSender<GameStateMsg>) -> Resu
                     ..
                 } => break 'running,
                 Event::KeyDown {
-                    keycode: Some(Keycode::Space),
-                    repeat: false,
+                    keycode: Some(Keycode::W),
                     ..
                 } => {
-                    game.toggle_state();
+                    let mut sp = game.sprites.pop().unwrap();
+                    sp.position = sp.position.offset(0, -sp.speed);
+                    game.sprites.push(sp);
                 }
-                Event::MouseButtonDown {
-                    x,
-                    y,
-                    mouse_btn: MouseButton::Left,
+                Event::KeyDown {
+                    keycode: Some(Keycode::A),
                     ..
                 } => {
-                    let x = (x as u32) / SQUARE_SIZE;
-                    let y = (y as u32) / SQUARE_SIZE;
-                    match game.get_mut(x as i32, y as i32) {
-                        Some(cell) => {
-                            cell.toggle_state();
-                        }
-                        None => unreachable!(),
-                    }
+                    let mut sp = game.sprites.pop().unwrap();
+                    sp.position = sp.position.offset(-sp.speed, 0);
+                    game.sprites.push(sp);
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::S),
+                    ..
+                } => {
+                    let mut sp = game.sprites.pop().unwrap();
+                    sp.position = sp.position.offset(0, sp.speed);
+                    game.sprites.push(sp);
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::D),
+                    ..
+                } => {
+                    let mut sp = game.sprites.pop().unwrap();
+                    sp.position = sp.position.offset(sp.speed, 0);
+                    game.sprites.push(sp);
                 }
                 _ => {}
             }
         }
 
-        if frame >= 30 {
-            game.update();
-            frame = 0;
-        }
-        let gmsg: GameStateMsg = GameStateMsg {
-            game: game.clone(),
-            frame,
-            thread_closed: false,
-        };
-
-        let _ = tx.send(gmsg);
-
-        if let gameoflife::GameState::Playing = game.state {
-            frame += 1;
-        }
+        let _ = tx.send(game.clone());
     }
-    let gmsg: GameStateMsg = GameStateMsg {
-        game: game.clone(),
-        frame,
-        thread_closed: true,
-    };
+    game.thread_closed = true;
+    let _ = tx.send(game.clone());
 
-    let _ = tx.send(gmsg);
+    return Ok(());
+}
 
+fn render(
+    canvas: &mut WindowCanvas,
+    color: Color,
+    texture: &Texture,
+    sprite: &Sprite,
+) -> Result<(), String> {
+    // Set color
+    canvas.set_draw_color(color);
+    // Clear the current canvas
+    canvas.clear();
+
+    let (width, height) = canvas.output_size()?;
+
+    // PERFORM RENDERING
+    let screen_pos = sprite.position + Point::new(width as i32 / 2, height as i32 / 2);
+    let screen_rect = Rect::from_center(screen_pos, sprite.img.width(), sprite.img.height());
+    canvas.copy(texture, sprite.img, screen_rect)?;
+
+    // Render
+    canvas.present();
     return Ok(());
 }
 
 pub fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
+    let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
 
     let (gs_tx, gs_rx) = mpsc::sync_channel::<GameStateMsg>(10);
     let (el_tx, el_rx) = mpsc::sync_channel::<EventListMsg>(10);
@@ -208,7 +237,6 @@ pub fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     let tc: TextureCreator<_> = canvas.texture_creator();
-    let (st1, st2) = dummy_texture(&mut canvas, &tc)?;
 
     let mut event_pump = sdl_context.event_pump()?;
     let _ = thread::Builder::new()
@@ -218,9 +246,6 @@ pub fn main() -> Result<(), String> {
             let _ = game_thread(el_rx, gs_tx);
         })
         .map_err(|e| e.to_string())?;
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.clear();
-    canvas.present();
 
     'running: loop {
         let mut events: Vec<Event> = Vec::<Event>::new();
@@ -236,6 +261,7 @@ pub fn main() -> Result<(), String> {
                     let _ = el_tx.send(elmsg);
                     break 'running;
                 }
+
                 _ => events.push(event),
             }
         }
@@ -243,29 +269,14 @@ pub fn main() -> Result<(), String> {
         let elmsg = EventListMsg { events };
         let _ = el_tx.send(elmsg);
 
-        let recv = gs_rx.recv().map_err(|e| e.to_string())?;
-        let game = recv.game;
-        let frame = recv.frame;
+        let mut recv = gs_rx.recv().map_err(|e| e.to_string())?;
 
-        canvas.set_draw_color(Color::RGB(0, 0, 0));
-        canvas.clear();
-        for (i, cell) in (&game).into_iter().enumerate() {
-            let i = i as u32;
-            let st = if frame >= 15 { &st1 } else { &st2 };
-            if cell.state == CellState::Alive {
-                canvas.copy(
-                    st,
-                    None,
-                    Rect::new(
-                        ((i % GAME_FIELD_WIDTH) * SQUARE_SIZE) as i32,
-                        ((i / GAME_FIELD_WIDTH) * SQUARE_SIZE) as i32,
-                        SQUARE_SIZE,
-                        SQUARE_SIZE,
-                    ),
-                )?;
-            }
-        }
-        canvas.present();
+        let sp = recv.sprites.pop().unwrap();
+        let img_texture = tc.load_texture(&sp.path)?;
+
+        render(&mut canvas, Color::RGB(0, 0, 0), &img_texture, &sp)?;
+
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 
     let recv = gs_rx.recv().map_err(|e| e.to_string())?;
