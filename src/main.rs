@@ -8,7 +8,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::{Texture, TextureCreator, WindowCanvas};
-use spriteengine::Sprite;
+use spriteengine::{Direction, Sprite, PLAYER_MOVE_SPEED};
 
 mod gameoflife;
 mod spriteengine;
@@ -132,7 +132,7 @@ fn game_thread(rx: Receiver<EventListMsg>, tx: SyncSender<GameStateMsg>) -> Resu
         Point::new(0, 0),
         rect!(48, 61, 22, 67),
         "assets/fire_wizard/Walk.png".into(),
-        10,
+        0,
     ));
 
     'running: loop {
@@ -146,38 +146,74 @@ fn game_thread(rx: Receiver<EventListMsg>, tx: SyncSender<GameStateMsg>) -> Resu
                 } => break 'running,
                 Event::KeyDown {
                     keycode: Some(Keycode::W),
+                    repeat: false,
                     ..
                 } => {
                     let mut sp = game.sprites.pop().unwrap();
-                    sp.position = sp.position.offset(0, -sp.speed);
+                    sp.speed = PLAYER_MOVE_SPEED;
+                    sp.dir = Direction::Up;
                     game.sprites.push(sp);
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
+                    repeat: false,
                     ..
                 } => {
                     let mut sp = game.sprites.pop().unwrap();
-                    sp.position = sp.position.offset(-sp.speed, 0);
+                    sp.speed = PLAYER_MOVE_SPEED;
+                    sp.dir = Direction::Left;
                     game.sprites.push(sp);
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::S),
+                    repeat: false,
                     ..
                 } => {
                     let mut sp = game.sprites.pop().unwrap();
-                    sp.position = sp.position.offset(0, sp.speed);
+                    sp.speed = PLAYER_MOVE_SPEED;
+                    sp.dir = Direction::Down;
                     game.sprites.push(sp);
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::D),
+                    repeat: false,
                     ..
                 } => {
                     let mut sp = game.sprites.pop().unwrap();
-                    sp.position = sp.position.offset(sp.speed, 0);
+                    sp.speed = PLAYER_MOVE_SPEED;
+                    sp.dir = Direction::Right;
+                    game.sprites.push(sp);
+                }
+                Event::KeyUp {
+                    keycode: Some(Keycode::W),
+                    repeat: false,
+                    ..
+                }
+                | Event::KeyUp {
+                    keycode: Some(Keycode::A),
+                    repeat: false,
+                    ..
+                }
+                | Event::KeyUp {
+                    keycode: Some(Keycode::S),
+                    repeat: false,
+                    ..
+                }
+                | Event::KeyUp {
+                    keycode: Some(Keycode::D),
+                    repeat: false,
+                    ..
+                } => {
+                    let mut sp = game.sprites.pop().unwrap();
+                    sp.speed = 0;
                     game.sprites.push(sp);
                 }
                 _ => {}
             }
+        }
+
+        for sprite in game.sprites.iter_mut() {
+            sprite.update_sprite();
         }
 
         let _ = tx.send(game.clone());
