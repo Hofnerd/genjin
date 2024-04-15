@@ -3,14 +3,17 @@ use std::thread;
 use std::time::Duration;
 
 use sdl2::event::Event;
-use sdl2::image::{self, InitFlag, LoadTexture};
+use sdl2::image::{self, InitFlag};
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use sdl2::rect::{Point, Rect};
+use sdl2::rect::Point;
 use sdl2::render::{Texture, TextureCreator, WindowCanvas};
-use spriteengine::{Direction, Sprite, PLAYER_MOVE_SPEED};
+use specs::{Builder, World, WorldExt};
+use sprite_components::{Position, Velocity};
 
-mod gameoflife;
+use crate::sprite_components::Direction;
+
+mod sprite_components;
 mod spriteengine;
 
 pub const SQUARE_SIZE: u32 = 15;
@@ -24,7 +27,6 @@ macro_rules! rect( ($x:expr, $y:expr, $w:expr, $h:expr) => (
 
 #[derive(Debug, Clone)]
 struct GameStateMsg {
-    sprites: Vec<Sprite>,
     thread_closed: bool,
 }
 
@@ -33,107 +35,24 @@ struct EventListMsg {
     events: Vec<Event>,
 }
 
-/*fn dummy_texture<'a>(
-    canvas: &mut Canvas<Window>,
-    texture_creator: &'a TextureCreator<WindowContext>,
-) -> Result<(Texture<'a>, Texture<'a>), String> {
-    enum TextureColor {
-        Yellow,
-        White,
-    }
-
-    let mut st1 = texture_creator
-        .create_texture_target(None, SQUARE_SIZE, SQUARE_SIZE)
-        .map_err(|e| e.to_string())?;
-
-    let mut st2 = texture_creator
-        .create_texture_target(None, SQUARE_SIZE, SQUARE_SIZE)
-        .map_err(|e| e.to_string())?;
-    {
-        let textures = vec![
-            (&mut st1, TextureColor::Yellow),
-            (&mut st2, TextureColor::White),
-        ];
-
-        canvas
-            .with_multiple_texture_canvas(textures.iter(), |texture_canvas, user_context| {
-                texture_canvas.set_draw_color(Color::RGB(0, 0, 0));
-                texture_canvas.clear();
-                match *user_context {
-                    TextureColor::Yellow => {
-                        for i in 0..SQUARE_SIZE {
-                            for j in 0..SQUARE_SIZE {
-                                if (i + j) % 4 == 0 {
-                                    texture_canvas.set_draw_color(Color::RGB(255, 255, 0));
-                                    texture_canvas
-                                        .draw_point(Point::new(i as i32, j as i32))
-                                        .expect("could not draw point");
-                                }
-                                if (i + j) % 9 == 0 {
-                                    texture_canvas.set_draw_color(Color::RGB(200, 200, 0));
-                                    texture_canvas
-                                        .draw_point(Point::new(i as i32, j as i32))
-                                        .expect("could not draw point");
-                                }
-                            }
-                        }
-                    }
-                    TextureColor::White => {
-                        for i in 0..SQUARE_SIZE {
-                            for j in 0..SQUARE_SIZE {
-                                if (i + j) % 7 == 0 {
-                                    texture_canvas.set_draw_color(Color::RGB(192, 192, 192));
-                                    texture_canvas
-                                        .draw_point(Point::new(i as i32, j as i32))
-                                        .expect("could not draw point");
-                                }
-                                if (i + j) % 5 == 0 {
-                                    texture_canvas.set_draw_color(Color::RGB(64, 64, 64));
-                                    texture_canvas
-                                        .draw_point(Point::new(i as i32, j as i32))
-                                        .expect("could not draw point");
-                                }
-                            }
-                        }
-                    }
-                };
-                for i in 0..SQUARE_SIZE {
-                    for j in 0..SQUARE_SIZE {
-                        if (i + j) % 7 == 0 {
-                            texture_canvas.set_draw_color(Color::RGB(192, 192, 192));
-                            texture_canvas
-                                .draw_point(Point::new(i as i32, j as i32))
-                                .expect("could not draw point");
-                        }
-                        if (i + j) % 5 == 0 {
-                            texture_canvas.set_draw_color(Color::RGB(64, 64, 64));
-                            texture_canvas
-                                .draw_point(Point::new(i as i32, j as i32))
-                                .expect("could not draw point");
-                        }
-                    }
-                }
-            })
-            .map_err(|e| e.to_string())?;
-    }
-
-    return Ok((st1, st2));
-}*/
-
 // Thread to perform the game operations
 fn game_thread(rx: Receiver<EventListMsg>, tx: SyncSender<GameStateMsg>) -> Result<(), String> {
-    //  let mut game = GameOfLife::new();
+    let mut world = World::new();
+
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(0, 0),
+        })
+        .with(Velocity {
+            speed: 0,
+            direction: Direction::Right,
+        })
+        .build();
+
     let mut game = GameStateMsg {
-        sprites: Vec::<Sprite>::new(),
         thread_closed: false,
     };
-
-    game.sprites.push(Sprite::new(
-        Point::new(0, 0),
-        rect!(48, 61, 22, 67),
-        "assets/fire_wizard/Walk.png".into(),
-        0,
-    ));
 
     'running: loop {
         let recv = rx.recv().map_err(|e| e.to_string())?;
@@ -148,42 +67,22 @@ fn game_thread(rx: Receiver<EventListMsg>, tx: SyncSender<GameStateMsg>) -> Resu
                     keycode: Some(Keycode::W),
                     repeat: false,
                     ..
-                } => {
-                    let mut sp = game.sprites.pop().unwrap();
-                    sp.speed = PLAYER_MOVE_SPEED;
-                    sp.dir = Direction::Up;
-                    game.sprites.push(sp);
-                }
+                } => {}
                 Event::KeyDown {
                     keycode: Some(Keycode::A),
                     repeat: false,
                     ..
-                } => {
-                    let mut sp = game.sprites.pop().unwrap();
-                    sp.speed = PLAYER_MOVE_SPEED;
-                    sp.dir = Direction::Left;
-                    game.sprites.push(sp);
-                }
+                } => {}
                 Event::KeyDown {
                     keycode: Some(Keycode::S),
                     repeat: false,
                     ..
-                } => {
-                    let mut sp = game.sprites.pop().unwrap();
-                    sp.speed = PLAYER_MOVE_SPEED;
-                    sp.dir = Direction::Down;
-                    game.sprites.push(sp);
-                }
+                } => {}
                 Event::KeyDown {
                     keycode: Some(Keycode::D),
                     repeat: false,
                     ..
-                } => {
-                    let mut sp = game.sprites.pop().unwrap();
-                    sp.speed = PLAYER_MOVE_SPEED;
-                    sp.dir = Direction::Right;
-                    game.sprites.push(sp);
-                }
+                } => {}
                 Event::KeyUp {
                     keycode: Some(Keycode::W),
                     repeat: false,
@@ -203,44 +102,24 @@ fn game_thread(rx: Receiver<EventListMsg>, tx: SyncSender<GameStateMsg>) -> Resu
                     keycode: Some(Keycode::D),
                     repeat: false,
                     ..
-                } => {
-                    let mut sp = game.sprites.pop().unwrap();
-                    sp.speed = 0;
-                    game.sprites.push(sp);
-                }
+                } => {}
                 _ => {}
             }
         }
-
-        for sprite in game.sprites.iter_mut() {
-            sprite.update_sprite();
-        }
-
         let _ = tx.send(game.clone());
     }
-    game.thread_closed = true;
     let _ = tx.send(game.clone());
 
     return Ok(());
 }
 
-fn render(
-    canvas: &mut WindowCanvas,
-    color: Color,
-    texture: &Texture,
-    sprite: &Sprite,
-) -> Result<(), String> {
+fn render(canvas: &mut WindowCanvas, color: Color, texture: &Texture) -> Result<(), String> {
     // Set color
     canvas.set_draw_color(color);
     // Clear the current canvas
     canvas.clear();
 
     let (width, height) = canvas.output_size()?;
-
-    // PERFORM RENDERING
-    let screen_pos = sprite.position + Point::new(width as i32 / 2, height as i32 / 2);
-    let screen_rect = Rect::from_center(screen_pos, sprite.img.width(), sprite.img.height());
-    canvas.copy(texture, sprite.img, screen_rect)?;
 
     // Render
     canvas.present();
@@ -305,14 +184,9 @@ pub fn main() -> Result<(), String> {
         let elmsg = EventListMsg { events };
         let _ = el_tx.send(elmsg);
 
-        let mut recv = gs_rx.recv().map_err(|e| e.to_string())?;
+        let recv = gs_rx.recv().map_err(|e| e.to_string())?;
 
-        let sp = recv.sprites.pop().unwrap();
-        let img_texture = tc.load_texture(&sp.path)?;
-
-        render(&mut canvas, Color::RGB(0, 0, 0), &img_texture, &sp)?;
-
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 20));
     }
 
     let recv = gs_rx.recv().map_err(|e| e.to_string())?;
