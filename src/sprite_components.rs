@@ -1,5 +1,5 @@
 use sdl2::rect::{Point, Rect};
-use specs::{Component, VecStorage};
+use specs::prelude::*;
 use specs_derive::Component;
 
 #[derive(Component, Debug, Clone)]
@@ -14,6 +14,16 @@ pub struct Velocity {
     pub speed: i32,
     pub direction: Direction,
 }
+
+#[derive(Component, Debug, Clone)]
+#[storage(VecStorage)]
+pub struct Health {
+    pub hp: u32,
+}
+
+#[derive(Component, Debug, Clone)]
+#[storage(NullStorage)]
+pub struct KeyboardControlled;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
