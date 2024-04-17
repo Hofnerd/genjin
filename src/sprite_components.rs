@@ -10,6 +10,12 @@ pub struct Position {
 
 #[derive(Component, Debug, Clone)]
 #[storage(VecStorage)]
+pub struct Life {
+    pub life: f32,
+}
+
+#[derive(Component, Debug, Clone)]
+#[storage(VecStorage)]
 pub struct Velocity {
     pub speed: i32,
     pub direction: Direction,
@@ -24,6 +30,14 @@ pub struct Health {
 #[derive(Component, Debug, Clone)]
 #[storage(NullStorage)]
 pub struct KeyboardControlled;
+
+#[derive(Component, Debug, Clone)]
+#[storage(NullStorage)]
+pub struct Player;
+
+#[derive(Component, Debug, Clone)]
+#[storage(NullStorage)]
+pub struct Bullet;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {

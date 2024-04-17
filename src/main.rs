@@ -1,4 +1,7 @@
+mod actionsys;
 mod animator;
+mod commands;
+mod decaysys;
 mod keyboard;
 mod physics;
 mod renderer;
@@ -6,7 +9,10 @@ mod sprite_components;
 
 use std::time::Duration;
 
+use actionsys::ActionSys;
 use animator::Animator;
+use commands::*;
+use decaysys::DecaySys;
 use keyboard::Keyboard;
 use physics::Physics;
 use sdl2::event::Event;
@@ -27,11 +33,6 @@ macro_rules! rect( ($x:expr, $y:expr, $w:expr, $h:expr) => (
         Rect::new($x as i32, $y as i32, $w as u32, $h as u32)
     )
 );
-
-pub enum MovementCommand {
-    Stop,
-    Move(Direction),
-}
 
 fn direction_spritesheet_row(direction: Direction) -> i32 {
     return match direction {
@@ -93,7 +94,9 @@ pub fn main() -> Result<(), String> {
     let mut dispatcher = DispatcherBuilder::new()
         .with(Keyboard, "Keyboard", &[])
         .with(Physics, "Physics", &["Keyboard"])
+        .with(ActionSys, "ActionSys", &["Keyboard"])
         .with(Animator, "Animator", &[])
+        .with(DecaySys, "DecaySys", &[])
         .build();
 
     let mut event_pump = sdl_context.event_pump()?;
@@ -103,9 +106,14 @@ pub fn main() -> Result<(), String> {
     renderer::SystemData::setup(&mut world);
 
     let movement_command: Option<MovementCommand> = None;
+    let action_command: Option<ActionCommand> = None;
     world.insert(movement_command);
+    world.insert(action_command);
 
-    let textures = [tc.load_texture("assets/reaper.png")?];
+    let textures = [
+        tc.load_texture("assets/reaper.png")?,
+        tc.load_texture("assets/bullet.png")?,
+    ];
 
     let player_spritesheet = 0;
     let player_top_left_frame = rect!(0, 0, 26, 36);
@@ -136,6 +144,7 @@ pub fn main() -> Result<(), String> {
     world
         .create_entity()
         .with(KeyboardControlled)
+        .with(Player)
         .with(Position {
             point: Point::new(0, 0),
         })
@@ -147,9 +156,9 @@ pub fn main() -> Result<(), String> {
         .with(player_ani)
         .build();
 
-    let mut i = 0;
     'running: loop {
         let mut movement_command: Option<MovementCommand> = None;
+        let mut action: Option<ActionCommand> = None;
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -187,6 +196,14 @@ pub fn main() -> Result<(), String> {
                 } => {
                     movement_command = Some(MovementCommand::Move(Direction::Down));
                 }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    repeat: false,
+                    ..
+                } => {
+                    action = Some(ActionCommand::Shoot);
+                }
+
                 Event::KeyUp {
                     keycode: Some(Keycode::Right),
                     repeat: false,
@@ -214,14 +231,14 @@ pub fn main() -> Result<(), String> {
         }
 
         *world.write_resource() = movement_command;
+        *world.write_resource() = action;
 
-        i = (i + 1) % 255;
         dispatcher.dispatch(&mut world);
         world.maintain();
 
         renderer::render(
             &mut canvas,
-            Color::RGB(i, 64, 255 - i),
+            Color::RGB(255, 255, 255),
             &textures,
             world.system_data(),
         )?;
