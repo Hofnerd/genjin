@@ -1,10 +1,8 @@
 use specs::prelude::*;
 
-use crate::sprite_components::*;
+use crate::{sprite_components::*, PLAYER_MOVE_SPEED};
 
 use super::MovementCommand;
-
-const PLAYER_MOVEMENT_SPEED: i32 = 20;
 
 pub struct Keyboard;
 
@@ -25,7 +23,7 @@ impl<'a> System<'a> for Keyboard {
             .par_join()
             .for_each(|(_, vel)| match movement_command {
                 &MovementCommand::Move(direction) => {
-                    vel.speed = PLAYER_MOVEMENT_SPEED;
+                    vel.speed = PLAYER_MOVE_SPEED;
                     vel.direction = direction;
                 }
                 MovementCommand::Stop => vel.speed = 0,

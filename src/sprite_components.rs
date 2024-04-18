@@ -2,7 +2,7 @@ use sdl2::rect::{Point, Rect};
 use specs::prelude::*;
 use specs_derive::Component;
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, PartialEq, Eq)]
 #[storage(VecStorage)]
 pub struct Position {
     pub point: Point,
@@ -35,10 +35,6 @@ pub struct KeyboardControlled;
 #[storage(NullStorage)]
 pub struct Player;
 
-#[derive(Component, Debug, Clone)]
-#[storage(NullStorage)]
-pub struct Bullet;
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
     Up,
@@ -47,7 +43,13 @@ pub enum Direction {
     Right,
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, PartialEq, Eq)]
+#[storage(VecStorage)]
+pub struct EntityId {
+    pub eid: usize,
+}
+
+#[derive(Component, Debug, Clone, PartialEq, Eq)]
 #[storage(VecStorage)]
 pub struct Sprite {
     pub spritesheet: usize,

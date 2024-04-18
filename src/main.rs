@@ -1,8 +1,10 @@
 mod actionsys;
 mod animator;
+mod collisionsys;
 mod commands;
 mod decaysys;
 mod keyboard;
+mod macros;
 mod physics;
 mod renderer;
 mod sprite_components;
@@ -11,6 +13,7 @@ use std::time::Duration;
 
 use actionsys::ActionSys;
 use animator::Animator;
+use collisionsys::CollisionSys;
 use commands::*;
 use decaysys::DecaySys;
 use keyboard::Keyboard;
@@ -26,13 +29,8 @@ use sprite_components::*;
 
 pub const SQUARE_SIZE: u32 = 15;
 pub const GAME_FIELD_WIDTH: u32 = 50;
-pub const PLAYER_MOVE_SPEED: i32 = 10;
+pub const PLAYER_MOVE_SPEED: i32 = 1;
 pub const GAME_FIELD_HEIGHT: u32 = 50;
-
-macro_rules! rect( ($x:expr, $y:expr, $w:expr, $h:expr) => (
-        Rect::new($x as i32, $y as i32, $w as u32, $h as u32)
-    )
-);
 
 fn direction_spritesheet_row(direction: Direction) -> i32 {
     return match direction {
@@ -93,7 +91,8 @@ pub fn main() -> Result<(), String> {
 
     let mut dispatcher = DispatcherBuilder::new()
         .with(Keyboard, "Keyboard", &[])
-        .with(Physics, "Physics", &["Keyboard"])
+        .with(CollisionSys, "CollisionSys", &["Keyboard"])
+        .with(Physics, "Physics", &["Keyboard", "CollisionSys"])
         .with(ActionSys, "ActionSys", &["Keyboard"])
         .with(Animator, "Animator", &[])
         .with(DecaySys, "DecaySys", &[])
@@ -113,6 +112,7 @@ pub fn main() -> Result<(), String> {
     let textures = [
         tc.load_texture("assets/reaper.png")?,
         tc.load_texture("assets/bullet.png")?,
+        tc.load_texture("assets/block.png")?,
     ];
 
     let player_spritesheet = 0;
@@ -140,6 +140,19 @@ pub fn main() -> Result<(), String> {
             Direction::Right,
         ),
     };
+
+    let blocksp = 2;
+
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(100, 100),
+        })
+        .with(Sprite {
+            spritesheet: blocksp,
+            region: rect!(0, 0, 200, 10),
+        })
+        .build();
 
     world
         .create_entity()
