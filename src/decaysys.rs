@@ -1,6 +1,6 @@
 use specs::prelude::*;
 
-use crate::sprite_components::*;
+use crate::entity_components::*;
 
 pub struct DecaySys;
 

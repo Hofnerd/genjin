@@ -1,7 +1,6 @@
-use crate::sprite_components::Direction;
+use crate::entity_components::Direction;
 
 pub enum MovementCommand {
-    Stop,
     Move(Direction),
 }
 

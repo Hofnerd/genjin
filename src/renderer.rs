@@ -5,7 +5,7 @@ use sdl2::{
 };
 use specs::prelude::*;
 
-use crate::sprite_components::*;
+use crate::entity_components::*;
 
 pub type SystemData<'a> = (ReadStorage<'a, Position>, ReadStorage<'a, Sprite>);
 

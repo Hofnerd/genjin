@@ -3,7 +3,9 @@ use sdl2::rect::Rect;
 use specs::prelude::*;
 
 use crate::commands::ActionCommand;
-use crate::sprite_components::*;
+
+use crate::entity_components::*;
+use crate::entity_flags::*;
 
 pub struct ActionSys;
 
@@ -28,16 +30,10 @@ impl<'a> System<'a> for ActionSys {
 
         (&data.1, &data.2, &data.3)
             .par_join()
-            .for_each(|(_, pos, vel)| match action {
+            .for_each(|(_, pos, _)| match action {
                 ActionCommand::Shoot => {
                     let bullet = entity.create();
-                    updater.insert(
-                        bullet,
-                        Velocity {
-                            speed: 10,
-                            direction: vel.direction,
-                        },
-                    );
+                    updater.insert(bullet, Velocity { speed: 10 });
                     updater.insert(
                         bullet,
                         Sprite {

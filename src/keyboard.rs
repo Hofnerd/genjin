@@ -1,8 +1,8 @@
 use specs::prelude::*;
 
-use crate::{sprite_components::*, PLAYER_MOVE_SPEED};
-
-use super::MovementCommand;
+use crate::commands::*;
+use crate::entity_components::*;
+use crate::entity_flags::*;
 
 pub struct Keyboard;
 
@@ -22,11 +22,11 @@ impl<'a> System<'a> for Keyboard {
         (&data.1, &mut data.2)
             .par_join()
             .for_each(|(_, vel)| match movement_command {
-                &MovementCommand::Move(direction) => {
-                    vel.speed = PLAYER_MOVE_SPEED;
-                    vel.direction = direction;
-                }
-                MovementCommand::Stop => vel.speed = 0,
+                &MovementCommand::Move(dir) => match dir {
+                    Direction::MoveDelta { x_delta, y_delta } => {
+                        vel.speed = ((y_delta as u16) << 8) | (x_delta as u16);
+                    }
+                },
             });
     }
 }

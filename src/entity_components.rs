@@ -6,6 +6,7 @@ use specs_derive::Component;
 #[storage(VecStorage)]
 pub struct Position {
     pub point: Point,
+    pub quadrant: Quadrant,
 }
 
 #[derive(Component, Debug, Clone)]
@@ -17,36 +18,20 @@ pub struct Life {
 #[derive(Component, Debug, Clone)]
 #[storage(VecStorage)]
 pub struct Velocity {
-    pub speed: i32,
-    pub direction: Direction,
+    pub speed: u16,
 }
-
-#[derive(Component, Debug, Clone)]
-#[storage(VecStorage)]
-pub struct Health {
-    pub hp: u32,
-}
-
-#[derive(Component, Debug, Clone)]
-#[storage(NullStorage)]
-pub struct KeyboardControlled;
-
-#[derive(Component, Debug, Clone)]
-#[storage(NullStorage)]
-pub struct Player;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
+    MoveDelta { x_delta: i8, y_delta: i8 },
 }
 
-#[derive(Component, Debug, Clone, PartialEq, Eq)]
-#[storage(VecStorage)]
-pub struct EntityId {
-    pub eid: usize,
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Quadrant {
+    Q1,
+    _Q2,
+    _Q3,
+    _Q4,
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Eq)]
@@ -60,8 +45,6 @@ pub struct Sprite {
 #[storage(VecStorage)]
 pub struct MovementAnimation {
     pub current_frame: usize,
-    pub up_frames: Vec<Sprite>,
-    pub down_frames: Vec<Sprite>,
     pub left_frames: Vec<Sprite>,
     pub right_frames: Vec<Sprite>,
 }
