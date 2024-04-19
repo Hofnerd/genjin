@@ -50,11 +50,11 @@ fn character_animation_frames(
 
     let y_off = top_left_frame.y() + frame_height as i32 * direction_spritesheet_row(direction);
     let mut frames = Vec::new();
-    for i in 0..3 {
+    for i in 0..2 {
         frames.push(Sprite {
             spritesheet,
             region: Rect::new(
-                top_left_frame.x() + frame_width as i32 * i,
+                top_left_frame.x() + (frame_width as i32 * i),
                 y_off,
                 frame_width,
                 frame_height,
@@ -91,7 +91,7 @@ pub fn main() -> Result<(), String> {
 
     let mut dispatcher = DispatcherBuilder::new()
         .with(Keyboard, "Keyboard", &[])
-        .with(CollisionSys, "CollisionSys", &["Keyboard"])
+        .with(CollisionSys, "CollisionSys", &[])
         .with(Physics, "Physics", &["Keyboard", "CollisionSys"])
         .with(ActionSys, "ActionSys", &["Keyboard"])
         .with(Animator, "Animator", &[])
@@ -116,7 +116,7 @@ pub fn main() -> Result<(), String> {
     ];
 
     let player_spritesheet = 0;
-    let player_top_left_frame = rect!(0, 0, 26, 36);
+    let player_top_left_frame = rect!(3, 3, 29, 36);
     let player_ani = MovementAnimation {
         current_frame: 0,
         up_frames: character_animation_frames(
