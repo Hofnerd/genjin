@@ -1,16 +1,21 @@
+mod collisionsys;
 mod commands;
 mod entity_components;
 mod entity_flags;
+mod gravitysys;
 mod keyboard;
 mod macros;
 mod physics;
 mod renderer;
 
+use collisionsys::CollisionSys;
+use gravitysys::GravitySys;
+use sdl2::rect::Rect;
 use std::time::Duration;
 
 use commands::*;
 use entity_components::*;
-use entity_flags::KeyboardControlled;
+use entity_flags::{GravityAfflicted, KeyboardControlled};
 use keyboard::Keyboard;
 use physics::Physics;
 use sdl2::event::Event;
@@ -21,9 +26,9 @@ use sdl2::rect::Point;
 use sdl2::render::TextureCreator;
 use specs::prelude::*;
 
-pub const SQUARE_SIZE: u32 = 15;
-pub const GAME_FIELD_WIDTH: u32 = 50;
-pub const GAME_FIELD_HEIGHT: u32 = 50;
+pub const WINDOW_HEIGHT: u32 = 600;
+pub const WINDOW_WIDTH: u32 = 800;
+pub const REFRESH_RATE: u32 = 120;
 
 pub fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
@@ -31,11 +36,7 @@ pub fn main() -> Result<(), String> {
     let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
 
     let window = video_subsystem
-        .window(
-            "Rust SDL2 Demo: Game of life",
-            SQUARE_SIZE * GAME_FIELD_WIDTH,
-            SQUARE_SIZE * GAME_FIELD_HEIGHT,
-        )
+        .window("Rust SDL2 Demo: Game of life", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .build()
         .map_err(|e| e.to_string())?;
@@ -51,12 +52,16 @@ pub fn main() -> Result<(), String> {
 
     let mut dispatcher = DispatcherBuilder::new()
         .with(Keyboard, "Keyboard", &[])
-        //.with(CollisionSys, "CollisionSys", &[])
-        .with(Physics, "Physics", &["Keyboard"])
+        .with(GravitySys, "GravitySys", &["Keyboard"])
+        .with(CollisionSys, "CollisionSys", &["Keyboard", "GravitySys"])
+        .with(
+            Physics,
+            "Physics",
+            &["Keyboard", "GravitySys", "CollisionSys"],
+        )
         //.with(ActionSys, "ActionSys", &["Keyboard"])
         //.with(Animator, "Animator", &[])
         //.with(DecaySys, "DecaySys", &[])
-        //.with(GravitySys, "GravitySys", &[])
         .build();
 
     let mut event_pump = sdl_context.event_pump()?;
@@ -79,17 +84,23 @@ pub fn main() -> Result<(), String> {
     world
         .create_entity()
         .with(KeyboardControlled)
+        .with(GravityAfflicted)
         .with(Velocity { speed: 0 })
         .with(Position {
             point: Point::new(0, 0),
             quadrant: Quadrant::Q1,
         })
+        .with(Sprite {
+            spritesheet: 0,
+            region: rect!(0, 0, 26, 36),
+        })
         .build();
+
+    let mut x_ctrl: i8 = 0;
+    let mut y_ctrl: i8 = 0;
 
     'running: loop {
         let mut action: Option<ActionCommand> = None;
-        let mut x_ctrl: i8 = 0;
-        let mut y_ctrl: i8 = 0;
 
         for event in event_pump.poll_iter() {
             match event {
@@ -112,21 +123,23 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl += 1;
+                    x_ctrl = 3;
                 }
+
                 Event::KeyDown {
                     keycode: Some(Keycode::Left),
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl += -1;
+                    x_ctrl = -3;
                 }
+
                 Event::KeyDown {
                     keycode: Some(Keycode::Up),
                     repeat: false,
                     ..
                 } => {
-                    y_ctrl += -1;
+                    y_ctrl = -3;
                 }
 
                 Event::KeyUp {
@@ -134,21 +147,23 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl -= 1;
+                    x_ctrl = 0;
                 }
+
                 Event::KeyUp {
                     keycode: Some(Keycode::Left),
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl -= -1;
+                    x_ctrl -= 0;
                 }
+
                 Event::KeyUp {
                     keycode: Some(Keycode::Up),
                     repeat: false,
                     ..
                 } => {
-                    y_ctrl -= -1;
+                    y_ctrl = 0;
                 }
                 _ => {}
             }
@@ -172,7 +187,7 @@ pub fn main() -> Result<(), String> {
             world.system_data(),
         )?;
 
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 120));
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / REFRESH_RATE));
     }
 
     return Ok(());

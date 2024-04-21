@@ -21,6 +21,11 @@ pub struct Velocity {
     pub speed: u16,
 }
 
+pub fn generate_speed(x_speed: i8, y_speed: i8) -> u16 {
+    let tmp = (((y_speed as u16) << 8) & 0xff00) | ((x_speed as u16) & 0xff);
+    return tmp;
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
     MoveDelta { x_delta: i8, y_delta: i8 },
@@ -29,9 +34,9 @@ pub enum Direction {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Quadrant {
     Q1,
-    _Q2,
-    _Q3,
-    _Q4,
+    Q2,
+    Q3,
+    Q4,
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Eq)]

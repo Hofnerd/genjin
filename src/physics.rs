@@ -1,6 +1,6 @@
 use specs::prelude::*;
 
-use crate::entity_components::*;
+use crate::{entity_components::*, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 pub struct Physics;
 
@@ -13,7 +13,21 @@ impl<'a> System<'a> for Physics {
             let y_speed: i8 = ((vel.speed >> 8) & 0xff) as i8;
             pos.point = pos.point.offset(x_speed as i32, y_speed as i32);
 
-            println!("{:?}", pos.point);
+            if (pos.point.x as u32) < (WINDOW_WIDTH / 2)
+                && (pos.point.y as u32) < (WINDOW_HEIGHT / 2)
+            {
+                pos.quadrant = Quadrant::Q1;
+            } else if (pos.point.x as u32) >= (WINDOW_WIDTH / 2)
+                && (pos.point.y as u32) < (WINDOW_HEIGHT / 2)
+            {
+                pos.quadrant = Quadrant::Q2;
+            } else if (pos.point.x as u32) < (WINDOW_WIDTH / 2)
+                && (pos.point.y as u32) >= (WINDOW_HEIGHT / 2)
+            {
+                pos.quadrant = Quadrant::Q3;
+            } else {
+                pos.quadrant = Quadrant::Q4;
+            }
         });
     }
 }

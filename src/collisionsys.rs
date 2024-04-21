@@ -18,45 +18,70 @@ impl<'a> System<'a> for CollisionSys {
         (&data.0, &data.1, &mut data.2, &data.3)
             .par_join()
             .filter(|(_, _, vel, _)| vel.speed != 0)
-            .for_each(|(pos, sprite, _vel, entity)| {
-                let _cur_rect =
+            .for_each(|(pos, sprite, vel, entity)| {
+                let cur_rect =
                     Rect::from_center(pos.point, sprite.region.width(), sprite.region.height());
-                for (_tposi, _tspritei, _) in (tpos, tsprite, tentities)
+                for (tposi, tspritei, _) in (tpos, tsprite, tentities)
                     .join()
                     .filter(|(_, _, tentitiyi)| entity.id() != tentitiyi.id())
+                    .filter(|(tposi, _, _)| tposi.quadrant != pos.quadrant)
                 {
-                    /*       match vel.direction {
-                        Direction::Left => {
-                            if tposi.point.x < pos.point.x {
-                                let trect = Rect::from_center(
-                                    tposi.point,
-                                    tspritei.region.width(),
-                                    tspritei.region.height(),
-                                );
+                    let mut x_dir = (vel.speed & 0xff) as i8;
+                    let mut y_dir = ((vel.speed >> 8) & 0xff) as i8;
 
-                                if cur_rect.has_intersection(trect) {
-                                    vel.speed = 0;
-                                }
-                            } else {
-                                continue;
+                    if x_dir > 0 {
+                        if tposi.point.x > pos.point.x {
+                            let trect = Rect::from_center(
+                                tposi.point,
+                                tspritei.region.width(),
+                                tspritei.region.height(),
+                            );
+
+                            if cur_rect.has_intersection(trect) {
+                                x_dir = 0;
                             }
                         }
-                        Direction::Right => {
-                            if tposi.point.x > pos.point.x {
-                                let trect = Rect::from_center(
-                                    tposi.point,
-                                    tspritei.region.width(),
-                                    tspritei.region.height(),
-                                );
+                    } else if x_dir < 0 {
+                        if tposi.point.x < pos.point.x {
+                            let trect = Rect::from_center(
+                                tposi.point,
+                                tspritei.region.width(),
+                                tspritei.region.height(),
+                            );
 
-                                if cur_rect.has_intersection(trect) {
-                                    vel.speed = 0;
-                                }
-                            } else {
-                                continue;
+                            if cur_rect.has_intersection(trect) {
+                                x_dir = 0;
                             }
                         }
-                    };*/
+                    }
+
+                    if y_dir > 0 {
+                        if tposi.point.y > pos.point.y {
+                            let trect = Rect::from_center(
+                                tposi.point,
+                                tspritei.region.width(),
+                                tspritei.region.height(),
+                            );
+
+                            if cur_rect.has_intersection(trect) {
+                                y_dir = 0;
+                            }
+                        }
+                    } else if y_dir < 0 {
+                        if tposi.point.y < pos.point.y {
+                            let trect = Rect::from_center(
+                                tposi.point,
+                                tspritei.region.width(),
+                                tspritei.region.height(),
+                            );
+
+                            if cur_rect.has_intersection(trect) {
+                                y_dir = 0;
+                            }
+                        }
+                    }
+
+                    vel.speed = generate_speed(x_dir, y_dir);
                 }
             });
     }

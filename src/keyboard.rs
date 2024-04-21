@@ -24,7 +24,7 @@ impl<'a> System<'a> for Keyboard {
             .for_each(|(_, vel)| match movement_command {
                 &MovementCommand::Move(dir) => match dir {
                     Direction::MoveDelta { x_delta, y_delta } => {
-                        vel.speed = ((y_delta as u16) << 8) | (x_delta as u16);
+                        vel.speed = generate_speed(x_delta, y_delta);
                     }
                 },
             });
