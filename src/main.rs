@@ -85,7 +85,10 @@ pub fn main() -> Result<(), String> {
         .create_entity()
         .with(KeyboardControlled)
         .with(GravityAfflicted { max_vel: 100 })
-        .with(Velocity { speed: 0 })
+        .with(Velocity {
+            speed: 0,
+            max_speed: 100,
+        })
         .with(Position {
             point: Point::new(0, 0),
             quadrant: Quadrant::Q1,
@@ -141,7 +144,7 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl = 3;
+                    x_ctrl = 1;
                 }
 
                 Event::KeyDown {
@@ -149,7 +152,7 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl = -3;
+                    x_ctrl = -1;
                 }
 
                 Event::KeyDown {
@@ -157,7 +160,7 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    y_ctrl = -3;
+                    y_ctrl = -1;
                 }
 
                 Event::KeyUp {

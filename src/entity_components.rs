@@ -31,6 +31,7 @@ pub struct Life {
 #[storage(VecStorage)]
 pub struct Velocity {
     pub speed: u16,
+    pub max_speed: i8,
 }
 
 pub fn encode_speed(x_speed: i8, y_speed: i8) -> u16 {
