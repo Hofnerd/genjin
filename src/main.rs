@@ -155,7 +155,7 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl -= 0;
+                    x_ctrl = 0;
                 }
 
                 Event::KeyUp {
