@@ -33,7 +33,13 @@ impl<'a> System<'a> for ActionSys {
             .for_each(|(_, pos, _)| match action {
                 ActionCommand::Shoot => {
                     let bullet = entity.create();
-                    updater.insert(bullet, Velocity { speed: 10 });
+                    updater.insert(
+                        bullet,
+                        Velocity {
+                            speed: 10,
+                            max_speed: 100,
+                        },
+                    );
                     updater.insert(
                         bullet,
                         Sprite {

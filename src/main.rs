@@ -1,17 +1,14 @@
-mod collisionsys;
-mod commands;
-mod entity_components;
-mod entity_flags;
-mod gravitysys;
-mod keyboard;
-mod macros;
-mod physics;
-mod renderer;
+mod entities;
+mod library;
+mod systems;
 
 use collisionsys::CollisionSys;
+use entities::*;
 use gravitysys::GravitySys;
+use library::*;
 use sdl2::rect::Rect;
 use std::time::Duration;
+use systems::*;
 
 use commands::*;
 use entity_components::*;
@@ -28,7 +25,7 @@ use specs::prelude::*;
 
 pub const WINDOW_HEIGHT: u32 = 600;
 pub const WINDOW_WIDTH: u32 = 800;
-pub const REFRESH_RATE: u32 = 120;
+pub const REFRESH_RATE: u32 = 60;
 
 pub fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
