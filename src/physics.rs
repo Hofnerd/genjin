@@ -1,3 +1,4 @@
+use sdl2::rect::Point;
 use specs::prelude::*;
 
 use crate::{entity_components::*, WINDOW_HEIGHT, WINDOW_WIDTH};
@@ -12,6 +13,10 @@ impl<'a> System<'a> for Physics {
             let x_speed: i8 = (vel.speed & 0xff) as i8;
             let y_speed: i8 = ((vel.speed >> 8) & 0xff) as i8;
             pos.point = pos.point.offset(x_speed as i32, y_speed as i32);
+            pos.point = Point::new(
+                pos.point.x % (WINDOW_WIDTH as i32),
+                pos.point.y % (WINDOW_HEIGHT as i32),
+            );
 
             if (pos.point.x as u32) < (WINDOW_WIDTH / 2)
                 && (pos.point.y as u32) < (WINDOW_HEIGHT / 2)

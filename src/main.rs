@@ -15,7 +15,7 @@ use std::time::Duration;
 
 use commands::*;
 use entity_components::*;
-use entity_flags::{GravityAfflicted, KeyboardControlled};
+use entity_flags::*;
 use keyboard::Keyboard;
 use physics::Physics;
 use sdl2::event::Event;
@@ -84,7 +84,7 @@ pub fn main() -> Result<(), String> {
     world
         .create_entity()
         .with(KeyboardControlled)
-        .with(GravityAfflicted)
+        .with(GravityAfflicted { max_vel: 100 })
         .with(Velocity { speed: 0 })
         .with(Position {
             point: Point::new(0, 0),
@@ -93,6 +93,24 @@ pub fn main() -> Result<(), String> {
         .with(Sprite {
             spritesheet: 0,
             region: rect!(0, 0, 26, 36),
+        })
+        .with(Collideable {
+            col_box: rect!(10, 10, 16, 36),
+        })
+        .build();
+
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(100, 100),
+            quadrant: Quadrant::Q3,
+        })
+        .with(Collideable {
+            col_box: rect!(0, 0, 100, 20),
+        })
+        .with(Sprite {
+            spritesheet: 2,
+            region: rect!(0, 0, 100, 20),
         })
         .build();
 

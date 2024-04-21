@@ -3,7 +3,7 @@ use specs_derive::Component;
 
 #[derive(Component, Debug, Clone)]
 #[storage(NullStorage)]
-pub struct GravityAfflicted;
+pub struct Grounded;
 
 #[derive(Component, Debug, Clone)]
 #[storage(NullStorage)]

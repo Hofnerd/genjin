@@ -8,16 +8,21 @@ pub struct GravitySys;
 impl<'a> System<'a> for GravitySys {
     type SystemData = (
         ReadStorage<'a, GravityAfflicted>,
+        ReadStorage<'a, Grounded>,
         WriteStorage<'a, Velocity>,
     );
 
     fn run(&mut self, mut data: Self::SystemData) {
-        (&data.0, &mut data.1).par_join().for_each(|(_, vel)| {
-            let mut y_cur = ((vel.speed >> 8) & 0xff) as i8;
-            y_cur += 1;
+        (&data.0, !&data.1, &mut data.2)
+            .par_join()
+            .for_each(|(grav, _, vel)| {
+                let (x_cur, mut y_cur) = unencode_speed(vel.speed);
+                y_cur += 1;
 
-            vel.speed = vel.speed & 0x00ff;
-            vel.speed = (((y_cur as u16) << 8) & 0xff00) | vel.speed;
-        });
+                if y_cur as i32 > grav.max_vel {
+                    y_cur = grav.max_vel as i8;
+                }
+                vel.speed = encode_speed(x_cur, y_cur);
+            });
     }
 }

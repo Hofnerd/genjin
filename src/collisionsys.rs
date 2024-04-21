@@ -8,20 +8,20 @@ pub struct CollisionSys;
 impl<'a> System<'a> for CollisionSys {
     type SystemData = (
         ReadStorage<'a, Position>,
-        ReadStorage<'a, Sprite>,
+        ReadStorage<'a, Collideable>,
         WriteStorage<'a, Velocity>,
         Entities<'a>,
     );
 
     fn run(&mut self, mut data: Self::SystemData) {
-        let (tpos, tsprite, tentities) = (&data.0, &data.1, &data.3).clone();
+        let (tpos, tcoll, tentities) = (&data.0, &data.1, &data.3).clone();
         (&data.0, &data.1, &mut data.2, &data.3)
             .par_join()
             .filter(|(_, _, vel, _)| vel.speed != 0)
-            .for_each(|(pos, sprite, vel, entity)| {
+            .for_each(|(pos, coll, vel, entity)| {
                 let cur_rect =
-                    Rect::from_center(pos.point, sprite.region.width(), sprite.region.height());
-                for (tposi, tspritei, _) in (tpos, tsprite, tentities)
+                    Rect::from_center(pos.point, coll.col_box.width(), coll.col_box.height());
+                for (tposi, tcolli, _) in (tpos, tcoll, tentities)
                     .join()
                     .filter(|(_, _, tentitiyi)| entity.id() != tentitiyi.id())
                     .filter(|(tposi, _, _)| tposi.quadrant != pos.quadrant)
@@ -33,8 +33,8 @@ impl<'a> System<'a> for CollisionSys {
                         if tposi.point.x > pos.point.x {
                             let trect = Rect::from_center(
                                 tposi.point,
-                                tspritei.region.width(),
-                                tspritei.region.height(),
+                                tcolli.col_box.width(),
+                                tcolli.col_box.height(),
                             );
 
                             if cur_rect.has_intersection(trect) {
@@ -45,8 +45,8 @@ impl<'a> System<'a> for CollisionSys {
                         if tposi.point.x < pos.point.x {
                             let trect = Rect::from_center(
                                 tposi.point,
-                                tspritei.region.width(),
-                                tspritei.region.height(),
+                                tcolli.col_box.width(),
+                                tcolli.col_box.height(),
                             );
 
                             if cur_rect.has_intersection(trect) {
@@ -59,8 +59,8 @@ impl<'a> System<'a> for CollisionSys {
                         if tposi.point.y > pos.point.y {
                             let trect = Rect::from_center(
                                 tposi.point,
-                                tspritei.region.width(),
-                                tspritei.region.height(),
+                                tcolli.col_box.width(),
+                                tcolli.col_box.height(),
                             );
 
                             if cur_rect.has_intersection(trect) {
@@ -71,8 +71,8 @@ impl<'a> System<'a> for CollisionSys {
                         if tposi.point.y < pos.point.y {
                             let trect = Rect::from_center(
                                 tposi.point,
-                                tspritei.region.width(),
-                                tspritei.region.height(),
+                                tcolli.col_box.width(),
+                                tcolli.col_box.height(),
                             );
 
                             if cur_rect.has_intersection(trect) {
@@ -81,7 +81,7 @@ impl<'a> System<'a> for CollisionSys {
                         }
                     }
 
-                    vel.speed = generate_speed(x_dir, y_dir);
+                    vel.speed = encode_speed(x_dir, y_dir);
                 }
             });
     }
