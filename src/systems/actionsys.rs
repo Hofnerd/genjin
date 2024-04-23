@@ -38,6 +38,7 @@ impl<'a> System<'a> for ActionSys {
                         Velocity {
                             speed: 10,
                             max_speed: 100,
+                            collision: false,
                         },
                     );
                     updater.insert(

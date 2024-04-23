@@ -7,26 +7,25 @@ pub struct CollisionSys;
 
 impl<'a> System<'a> for CollisionSys {
     type SystemData = (
-        ReadStorage<'a, Position>,
+        WriteStorage<'a, Position>,
         ReadStorage<'a, Collideable>,
         WriteStorage<'a, Velocity>,
         Entities<'a>,
     );
 
     fn run(&mut self, mut data: Self::SystemData) {
-        let (tpos, tcoll, tentities) = (&data.0, &data.1, &data.3).clone();
         (&data.0, &data.1, &mut data.2, &data.3)
             .par_join()
             .filter(|(_, _, vel, _)| vel.speed != 0)
             .for_each(|(pos, coll, vel, entity)| {
                 let cur_rect =
                     Rect::from_center(pos.point, coll.col_box.width(), coll.col_box.height());
-                for (tposi, tcolli, _) in (tpos, tcoll, tentities)
+                for (tposi, tcolli, _) in (&data.0, &data.1, &data.3)
                     .join()
                     .filter(|(_, _, tentitiyi)| entity.id() != tentitiyi.id())
                 {
-                    let mut x_dir = (vel.speed & 0xff) as i8;
-                    let mut y_dir = ((vel.speed >> 8) & 0xff) as i8;
+                    //let mut x_dir = (vel.speed & 0xff) as i8;
+                    //let mut y_dir = ((vel.speed >> 8) & 0xff) as i8;
 
                     /*if x_dir > 0 {
                         if tposi.point.x > pos.point.x {
@@ -90,9 +89,20 @@ impl<'a> System<'a> for CollisionSys {
 
                     match cur_rect.intersection(trect) {
                         Some(rect) => {
-                            println!("{:?}", rect);
-                            pos.point
-                                .offset(-(rect.width() as i32), -(rect.height() as i32));
+                            let (mut x_speed, mut y_speed) = unencode_speed(vel.speed);
+                            if x_speed > 0 {
+                                x_speed = -(rect.width() as i8);
+                            } else if x_speed < 0 {
+                                x_speed = rect.width() as i8;
+                            }
+                            if y_speed > 0 {
+                                y_speed = -(rect.height() as i8);
+                            } else if x_speed < 0 {
+                                y_speed = rect.height() as i8;
+                            }
+
+                            vel.speed = encode_speed(x_speed, y_speed);
+                            vel.collision = true;
                         }
                         None => continue,
                     }

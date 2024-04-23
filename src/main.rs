@@ -77,6 +77,7 @@ pub fn main() -> Result<(), String> {
         .with(Velocity {
             speed: 0,
             max_speed: 10,
+            collision: false,
         })
         .with(Position {
             point: Point::new(0, 0),
