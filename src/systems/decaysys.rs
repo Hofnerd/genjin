@@ -9,10 +9,10 @@ impl<'a> System<'a> for DecaySys {
 
     fn run(&mut self, (entities, mut life): Self::SystemData) {
         (&entities, &mut life).par_join().for_each(|(e, life)| {
-            if life.life < 0.0 {
+            if life.life == 0 {
                 let _ = entities.delete(e);
             } else {
-                life.life -= 1.0;
+                life.life -= 1;
             }
         });
     }

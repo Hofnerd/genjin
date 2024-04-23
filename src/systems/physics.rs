@@ -6,33 +6,33 @@ use crate::{entity_components::*, WINDOW_HEIGHT, WINDOW_WIDTH};
 pub struct Physics;
 
 impl<'a> System<'a> for Physics {
-    type SystemData = (WriteStorage<'a, Position>, ReadStorage<'a, Velocity>);
+    type SystemData = (WriteStorage<'a, Position>, WriteStorage<'a, Velocity>);
 
     fn run(&mut self, mut data: Self::SystemData) {
-        (&mut data.0, &data.1).par_join().for_each(|(pos, vel)| {
-            let x_speed: i8 = (vel.speed & 0xff) as i8;
-            let y_speed: i8 = ((vel.speed >> 8) & 0xff) as i8;
-            pos.point = pos.point.offset(x_speed as i32, y_speed as i32);
-            pos.point = Point::new(
-                pos.point.x % (WINDOW_WIDTH as i32),
-                pos.point.y % (WINDOW_HEIGHT as i32),
-            );
+        (&mut data.0, &mut data.1)
+            .par_join()
+            .for_each(|(pos, vel)| {
+                let mut x_speed: i8 = (vel.speed & 0xff) as i8;
+                let mut y_speed: i8 = ((vel.speed >> 8) & 0xff) as i8;
+                pos.point = pos.point.offset(x_speed as i32, y_speed as i32);
+                pos.point = Point::new(
+                    pos.point.x % (WINDOW_WIDTH as i32),
+                    pos.point.y % (WINDOW_HEIGHT as i32),
+                );
 
-            if (pos.point.x as u32) < (WINDOW_WIDTH / 2)
-                && (pos.point.y as u32) < (WINDOW_HEIGHT / 2)
-            {
-                pos.quadrant = Quadrant::Q1;
-            } else if (pos.point.x as u32) >= (WINDOW_WIDTH / 2)
-                && (pos.point.y as u32) < (WINDOW_HEIGHT / 2)
-            {
-                pos.quadrant = Quadrant::Q2;
-            } else if (pos.point.x as u32) < (WINDOW_WIDTH / 2)
-                && (pos.point.y as u32) >= (WINDOW_HEIGHT / 2)
-            {
-                pos.quadrant = Quadrant::Q3;
-            } else {
-                pos.quadrant = Quadrant::Q4;
-            }
-        });
+                if x_speed > 0 {
+                    x_speed -= 1;
+                } else if x_speed < 0 {
+                    x_speed += 1;
+                }
+
+                if y_speed > 0 {
+                    y_speed -= 1;
+                } else if y_speed < 0 {
+                    y_speed += 1;
+                }
+
+                vel.speed = encode_speed(x_speed, y_speed);
+            });
     }
 }

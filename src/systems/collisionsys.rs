@@ -24,12 +24,11 @@ impl<'a> System<'a> for CollisionSys {
                 for (tposi, tcolli, _) in (tpos, tcoll, tentities)
                     .join()
                     .filter(|(_, _, tentitiyi)| entity.id() != tentitiyi.id())
-                    .filter(|(tposi, _, _)| tposi.quadrant != pos.quadrant)
                 {
                     let mut x_dir = (vel.speed & 0xff) as i8;
                     let mut y_dir = ((vel.speed >> 8) & 0xff) as i8;
 
-                    if x_dir > 0 {
+                    /*if x_dir > 0 {
                         if tposi.point.x > pos.point.x {
                             let trect = Rect::from_center(
                                 tposi.point,
@@ -79,9 +78,24 @@ impl<'a> System<'a> for CollisionSys {
                                 y_dir = 0;
                             }
                         }
-                    }
+                    }*/
 
-                    vel.speed = encode_speed(x_dir, y_dir);
+                    //vel.speed = encode_speed(x_dir, y_dir);
+
+                    let trect = Rect::from_center(
+                        tposi.point,
+                        tcolli.col_box.width(),
+                        tcolli.col_box.height(),
+                    );
+
+                    match cur_rect.intersection(trect) {
+                        Some(rect) => {
+                            println!("{:?}", rect);
+                            pos.point
+                                .offset(-(rect.width() as i32), -(rect.height() as i32));
+                        }
+                        None => continue,
+                    }
                 }
             });
     }

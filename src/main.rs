@@ -4,10 +4,10 @@ mod systems;
 
 use collisionsys::CollisionSys;
 use entities::*;
-use gravitysys::GravitySys;
 use library::*;
 use sdl2::rect::Rect;
 use std::time::Duration;
+use systems::decaysys::DecaySys;
 use systems::*;
 
 use commands::*;
@@ -49,16 +49,9 @@ pub fn main() -> Result<(), String> {
 
     let mut dispatcher = DispatcherBuilder::new()
         .with(Keyboard, "Keyboard", &[])
-        .with(GravitySys, "GravitySys", &["Keyboard"])
-        .with(CollisionSys, "CollisionSys", &["Keyboard", "GravitySys"])
-        .with(
-            Physics,
-            "Physics",
-            &["Keyboard", "GravitySys", "CollisionSys"],
-        )
-        //.with(ActionSys, "ActionSys", &["Keyboard"])
-        //.with(Animator, "Animator", &[])
-        //.with(DecaySys, "DecaySys", &[])
+        .with(CollisionSys, "CollisionSys", &["Keyboard"])
+        .with(Physics, "Physics", &["Keyboard", "CollisionSys"])
+        .with(DecaySys, "DecaySys", &[])
         .build();
 
     let mut event_pump = sdl_context.event_pump()?;
@@ -81,14 +74,12 @@ pub fn main() -> Result<(), String> {
     world
         .create_entity()
         .with(KeyboardControlled)
-        .with(GravityAfflicted { max_vel: 100 })
         .with(Velocity {
             speed: 0,
-            max_speed: 100,
+            max_speed: 10,
         })
         .with(Position {
             point: Point::new(0, 0),
-            quadrant: Quadrant::Q1,
         })
         .with(Sprite {
             spritesheet: 0,
@@ -103,7 +94,6 @@ pub fn main() -> Result<(), String> {
         .create_entity()
         .with(Position {
             point: Point::new(100, 100),
-            quadrant: Quadrant::Q3,
         })
         .with(Collideable {
             col_box: rect!(0, 0, 100, 20),
@@ -113,6 +103,8 @@ pub fn main() -> Result<(), String> {
             region: rect!(0, 0, 100, 20),
         })
         .build();
+
+    // Bound the world so that entities cant leave the system
 
     let mut x_ctrl: i8 = 0;
     let mut y_ctrl: i8 = 0;
@@ -141,7 +133,7 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl = 1;
+                    x_ctrl = 3;
                 }
 
                 Event::KeyDown {
@@ -149,7 +141,7 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl = -1;
+                    x_ctrl = -3;
                 }
 
                 Event::KeyDown {
@@ -157,8 +149,14 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    y_ctrl = -1;
+                    y_ctrl = -3;
                 }
+
+                Event::KeyDown {
+                    keycode: Some(Keycode::Down),
+                    repeat: false,
+                    ..
+                } => y_ctrl = 3,
 
                 Event::KeyUp {
                     keycode: Some(Keycode::Right),
@@ -178,6 +176,14 @@ pub fn main() -> Result<(), String> {
 
                 Event::KeyUp {
                     keycode: Some(Keycode::Up),
+                    repeat: false,
+                    ..
+                } => {
+                    y_ctrl = 0;
+                }
+
+                Event::KeyUp {
+                    keycode: Some(Keycode::Down),
                     repeat: false,
                     ..
                 } => {

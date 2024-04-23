@@ -6,7 +6,6 @@ use specs_derive::Component;
 #[storage(VecStorage)]
 pub struct Position {
     pub point: Point,
-    pub quadrant: Quadrant,
 }
 
 #[derive(Component, Debug, Clone)]
@@ -24,7 +23,7 @@ pub struct GravityAfflicted {
 #[derive(Component, Debug, Clone)]
 #[storage(VecStorage)]
 pub struct Life {
-    pub life: f32,
+    pub life: u32,
 }
 
 #[derive(Component, Debug, Clone)]
@@ -62,14 +61,6 @@ pub fn unencode_speed(vel: u16) -> (i8, i8) {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
     MoveDelta { x_delta: i8, y_delta: i8 },
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Quadrant {
-    Q1,
-    Q2,
-    Q3,
-    Q4,
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Eq)]

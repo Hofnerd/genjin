@@ -26,12 +26,21 @@ impl<'a> System<'a> for Keyboard {
                     Direction::MoveDelta { x_delta, y_delta } => {
                         let (mut x_cur, mut y_cur) = unencode_speed(vel.speed);
 
-                        if x_cur <= vel.max_speed || x_cur >= -vel.max_speed {
-                            x_cur = x_cur + x_delta;
+                        x_cur = x_cur + x_delta;
+                        y_cur = y_cur + y_delta;
+
+                        if x_cur >= vel.max_speed {
+                            x_cur = vel.max_speed;
+                        } else if x_cur <= -vel.max_speed {
+                            x_cur = -vel.max_speed;
                         }
-                        if y_cur <= vel.max_speed || y_cur >= -vel.max_speed {
-                            y_cur = y_cur + y_delta;
+
+                        if y_cur >= vel.max_speed {
+                            y_cur = vel.max_speed;
+                        } else if y_cur <= -vel.max_speed {
+                            y_cur = -vel.max_speed;
                         }
+
                         vel.speed = encode_speed(x_cur, y_cur);
                     }
                 },

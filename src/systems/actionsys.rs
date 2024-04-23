@@ -47,7 +47,7 @@ impl<'a> System<'a> for ActionSys {
                             region: rect!(0, 0, 5, 5),
                         },
                     );
-                    updater.insert(bullet, Life { life: 30.0 });
+                    updater.insert(bullet, Life { life: 3 });
                     updater.insert(bullet, pos.clone());
                 }
             });
