@@ -18,87 +18,43 @@ impl<'a> System<'a> for CollisionSys {
             .par_join()
             .filter(|(_, _, vel, _)| vel.speed != 0)
             .for_each(|(pos, coll, vel, entity)| {
+                let x_speed: i8 = (vel.speed & 0xff) as i8;
+                let y_speed: i8 = ((vel.speed >> 8) & 0xff) as i8;
                 let cur_rect =
                     Rect::from_center(pos.point, coll.col_box.width(), coll.col_box.height());
+                let cur_rect_offset = Rect::from_center(
+                    pos.point.offset(x_speed as i32, y_speed as i32),
+                    coll.col_box.width(),
+                    coll.col_box.height(),
+                );
+
                 for (tposi, tcolli, _) in (&data.0, &data.1, &data.3)
                     .join()
                     .filter(|(_, _, tentitiyi)| entity.id() != tentitiyi.id())
                 {
-                    //let mut x_dir = (vel.speed & 0xff) as i8;
-                    //let mut y_dir = ((vel.speed >> 8) & 0xff) as i8;
-
-                    /*if x_dir > 0 {
-                        if tposi.point.x > pos.point.x {
-                            let trect = Rect::from_center(
-                                tposi.point,
-                                tcolli.col_box.width(),
-                                tcolli.col_box.height(),
-                            );
-
-                            if cur_rect.has_intersection(trect) {
-                                x_dir = 0;
-                            }
-                        }
-                    } else if x_dir < 0 {
-                        if tposi.point.x < pos.point.x {
-                            let trect = Rect::from_center(
-                                tposi.point,
-                                tcolli.col_box.width(),
-                                tcolli.col_box.height(),
-                            );
-
-                            if cur_rect.has_intersection(trect) {
-                                x_dir = 0;
-                            }
-                        }
-                    }
-
-                    if y_dir > 0 {
-                        if tposi.point.y > pos.point.y {
-                            let trect = Rect::from_center(
-                                tposi.point,
-                                tcolli.col_box.width(),
-                                tcolli.col_box.height(),
-                            );
-
-                            if cur_rect.has_intersection(trect) {
-                                y_dir = 0;
-                            }
-                        }
-                    } else if y_dir < 0 {
-                        if tposi.point.y < pos.point.y {
-                            let trect = Rect::from_center(
-                                tposi.point,
-                                tcolli.col_box.width(),
-                                tcolli.col_box.height(),
-                            );
-
-                            if cur_rect.has_intersection(trect) {
-                                y_dir = 0;
-                            }
-                        }
-                    }*/
-
-                    //vel.speed = encode_speed(x_dir, y_dir);
-
                     let trect = Rect::from_center(
                         tposi.point,
                         tcolli.col_box.width(),
                         tcolli.col_box.height(),
                     );
 
-                    match cur_rect.intersection(trect) {
+                    match cur_rect_offset.intersection(trect) {
                         Some(rect) => {
                             let (mut x_speed, mut y_speed) = unencode_speed(vel.speed);
+                            /* Closer, but not perfect. need to not use speed
+                             * and instead use something else to determine
+                             * the offset required*/
+                            println!("{:?}", rect);
+
                             if x_speed > 0 {
-                                x_speed = -(rect.width() as i8);
+                                x_speed = (trect.left() - cur_rect.right()) as i8;
                             } else if x_speed < 0 {
-                                x_speed = rect.width() as i8;
+                                x_speed = (trect.right() - cur_rect.left()) as i8;
                             }
                             if y_speed > 0 {
-                                y_speed = -(rect.height() as i8);
-                            } else if x_speed < 0 {
-                                y_speed = rect.height() as i8;
+                                y_speed = (trect.top() - cur_rect.bottom()) as i8;
+                            } else if y_speed < 0 {
+                                y_speed = (cur_rect.top() - trect.bottom()) as i8;
                             }
 
                             vel.speed = encode_speed(x_speed, y_speed);
