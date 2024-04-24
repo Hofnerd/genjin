@@ -8,6 +8,7 @@ use library::*;
 use sdl2::rect::Rect;
 use std::time::Duration;
 use systems::decaysys::DecaySys;
+use systems::gravitysys::GravitySys;
 use systems::*;
 
 use commands::*;
@@ -49,8 +50,13 @@ pub fn main() -> Result<(), String> {
 
     let mut dispatcher = DispatcherBuilder::new()
         .with(Keyboard, "Keyboard", &[])
-        .with(CollisionSys, "CollisionSys", &["Keyboard"])
-        .with(Physics, "Physics", &["Keyboard", "CollisionSys"])
+        .with(GravitySys, "GravitySys", &["Keyboard"])
+        .with(CollisionSys, "CollisionSys", &["Keyboard", "GravitySys"])
+        .with(
+            Physics,
+            "Physics",
+            &["Keyboard", "GravitySys", "CollisionSys"],
+        )
         .with(DecaySys, "DecaySys", &[])
         .build();
 
@@ -74,10 +80,13 @@ pub fn main() -> Result<(), String> {
     world
         .create_entity()
         .with(KeyboardControlled)
+        .with(GravityAfflicted {
+            max_vel: 10,
+            grounded: false,
+        })
         .with(Velocity {
             speed: 0,
             max_speed: 10,
-            collision: false,
         })
         .with(Position {
             point: Point::new(0, 0),
@@ -106,6 +115,15 @@ pub fn main() -> Result<(), String> {
         .build();
 
     // Bound the world so that entities cant leave the system
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(0, WINDOW_HEIGHT as i32),
+        })
+        .with(Collideable {
+            col_box: rect!(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT),
+        })
+        .build();
 
     let mut x_ctrl: i8 = 0;
     let mut y_ctrl: i8 = 0;

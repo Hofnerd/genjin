@@ -15,6 +15,7 @@ impl<'a> System<'a> for GravitySys {
     fn run(&mut self, mut data: Self::SystemData) {
         (&data.0, !&data.1, &mut data.2)
             .par_join()
+            .filter(|(grav, _, _)| grav.grounded != true)
             .for_each(|(grav, _, vel)| {
                 let (x_cur, mut y_cur) = unencode_speed(vel.speed);
                 y_cur += 1;

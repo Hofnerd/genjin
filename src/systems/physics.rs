@@ -14,24 +14,17 @@ impl<'a> System<'a> for Physics {
                 let mut x_speed: i8 = (vel.speed & 0xff) as i8;
                 let mut y_speed: i8 = ((vel.speed >> 8) & 0xff) as i8;
                 pos.point = pos.point.offset(x_speed as i32, y_speed as i32);
-                if vel.collision {
-                    x_speed = 0;
-                    y_speed = 0;
-                    vel.collision = false;
-                } else {
-                    if x_speed > 0 {
-                        x_speed -= 1;
-                    } else if x_speed < 0 {
-                        x_speed += 1;
-                    }
-
-                    if y_speed > 0 {
-                        y_speed -= 1;
-                    } else if y_speed < 0 {
-                        y_speed += 1;
-                    }
+                if x_speed > 0 {
+                    x_speed -= 1;
+                } else if x_speed < 0 {
+                    x_speed += 1;
                 }
 
+                if y_speed > 0 {
+                    y_speed -= 1;
+                } else if y_speed < 0 {
+                    y_speed += 1;
+                }
                 vel.speed = encode_speed(x_speed, y_speed);
             });
     }
