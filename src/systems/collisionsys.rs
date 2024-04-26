@@ -27,6 +27,8 @@ impl<'a> System<'a> for CollisionSys {
             .for_each(|(pos, coll, vel, entity, mut grav)| {
                 let x_speed: i8 = (vel.speed & 0xff) as i8;
                 let y_speed: i8 = ((vel.speed >> 8) & 0xff) as i8;
+                let cur_rect =
+                    Rect::from_center(pos.point, coll.col_box.width(), coll.col_box.height());
                 let cur_rect_offset = Rect::from_center(
                     pos.point.offset(x_speed as i32, y_speed as i32),
                     coll.col_box.width(),
@@ -46,13 +48,12 @@ impl<'a> System<'a> for CollisionSys {
                     if cur_rect_offset.has_intersection(trect) {
                         vel.speed = 0;
 
-                        match trect.intersect_line(
-                            cur_rect_offset.bottom_left(),
-                            cur_rect_offset.bottom_right(),
-                        ) {
+                        match trect.intersect_line(cur_rect.bottom_left(), cur_rect.bottom_right())
+                        {
                             Some(_) => match &mut grav {
                                 Some(grav) => {
                                     grav.grounded = true;
+                                    grav.grounded_rect = Some(trect.clone());
                                 }
                                 None => continue,
                             },

@@ -19,6 +19,7 @@ pub struct Collideable {
 pub struct GravityAfflicted {
     pub max_vel: i32,
     pub grounded: bool,
+    pub grounded_rect: Option<Rect>,
 }
 
 #[derive(Component, Debug, Clone)]

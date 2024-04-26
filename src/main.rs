@@ -81,8 +81,9 @@ pub fn main() -> Result<(), String> {
         .create_entity()
         .with(KeyboardControlled)
         .with(GravityAfflicted {
-            max_vel: 10,
+            max_vel: 20,
             grounded: false,
+            grounded_rect: None,
         })
         .with(Velocity {
             speed: 0,
@@ -119,6 +120,36 @@ pub fn main() -> Result<(), String> {
         .create_entity()
         .with(Position {
             point: Point::new(0, WINDOW_HEIGHT as i32),
+        })
+        .with(Collideable {
+            col_box: rect!(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT),
+        })
+        .build();
+
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(0, -(WINDOW_HEIGHT as i32)),
+        })
+        .with(Collideable {
+            col_box: rect!(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT),
+        })
+        .build();
+
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(-(WINDOW_WIDTH as i32), 0),
+        })
+        .with(Collideable {
+            col_box: rect!(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT),
+        })
+        .build();
+
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(WINDOW_WIDTH as i32, 0),
         })
         .with(Collideable {
             col_box: rect!(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT),
