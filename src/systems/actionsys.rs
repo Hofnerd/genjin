@@ -33,10 +33,11 @@ impl<'a> System<'a> for ActionSys {
             .for_each(|(_, pos, _)| match action {
                 ActionCommand::Shoot => {
                     let bullet = entity.create();
+
                     updater.insert(
                         bullet,
                         Velocity {
-                            speed: 10,
+                            speed: 30,
                             max_speed: 100,
                         },
                     );
@@ -47,7 +48,7 @@ impl<'a> System<'a> for ActionSys {
                             region: rect!(0, 0, 5, 5),
                         },
                     );
-                    updater.insert(bullet, Life { life: 3 });
+                    updater.insert(bullet, Life { life: 10 });
                     updater.insert(bullet, pos.clone());
                 }
             });

@@ -24,7 +24,7 @@ impl<'a> System<'a> for Keyboard {
             .for_each(|(_, vel)| match movement_command {
                 &MovementCommand::Move(dir) => match dir {
                     Direction::MoveDelta { x_delta, y_delta } => {
-                        let (mut x_cur, mut y_cur) = unencode_speed(vel.speed);
+                        let (mut x_cur, mut y_cur) = vel.unencode_speed();
 
                         x_cur = x_cur + x_delta;
                         y_cur = y_cur + y_delta;
@@ -41,7 +41,7 @@ impl<'a> System<'a> for Keyboard {
                             y_cur = -vel.max_speed;
                         }
 
-                        vel.speed = encode_speed(x_cur, y_cur);
+                        vel.encode_speed(x_cur, y_cur);
                     }
                 },
             });

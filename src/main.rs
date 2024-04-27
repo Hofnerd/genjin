@@ -7,6 +7,7 @@ use entities::*;
 use library::*;
 use sdl2::rect::Rect;
 use std::time::Duration;
+use systems::actionsys::ActionSys;
 use systems::decaysys::DecaySys;
 use systems::gravitysys::GravitySys;
 use systems::*;
@@ -58,6 +59,7 @@ pub fn main() -> Result<(), String> {
             &["Keyboard", "GravitySys", "CollisionSys"],
         )
         .with(DecaySys, "DecaySys", &[])
+        .with(ActionSys, "ActionSys", &[])
         .build();
 
     let mut event_pump = sdl_context.event_pump()?;
@@ -99,6 +101,7 @@ pub fn main() -> Result<(), String> {
         .with(Collideable {
             col_box: rect!(10, 10, 16, 36),
         })
+        .with(Player)
         .build();
 
     world

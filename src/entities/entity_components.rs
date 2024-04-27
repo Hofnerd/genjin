@@ -35,29 +35,44 @@ pub struct Velocity {
     pub max_speed: i8,
 }
 
-pub fn encode_speed(x_speed: i8, y_speed: i8) -> u16 {
-    let mut x_speed = x_speed;
-    if x_speed == 127 {
-        x_speed = 127
-    } else if x_speed == -128 {
-        x_speed = -128;
+impl Velocity {
+    pub fn encode_speed(&mut self, x_speed: i8, y_speed: i8) {
+        let mut x_speed = x_speed;
+        if x_speed == 127 {
+            x_speed = 127
+        } else if x_speed == -128 {
+            x_speed = -128;
+        }
+
+        let mut y_speed = y_speed;
+        if y_speed == 127 {
+            y_speed = 127
+        } else if y_speed == -128 {
+            y_speed = -128;
+        }
+
+        let tmp = (((y_speed as u16) << 8) & 0xff00) | ((x_speed as u16) & 0xff);
+        self.speed = tmp;
     }
 
-    let mut y_speed = y_speed;
-    if y_speed == 127 {
-        y_speed = 127
-    } else if y_speed == -128 {
-        y_speed = -128;
+    pub fn unencode_speed(&self) -> (i8, i8) {
+        let vel = self.speed;
+        let x_speed: i8 = (vel & 0xff) as i8;
+        let y_speed: i8 = ((vel >> 8) & 0xff) as i8;
+        return (x_speed, y_speed);
     }
+    pub fn normalize_speed(&self) -> (i8, i8) {
+        let (mut x_speed, mut y_speed) = self.unencode_speed();
 
-    let tmp = (((y_speed as u16) << 8) & 0xff00) | ((x_speed as u16) & 0xff);
-    return tmp;
-}
+        if x_speed != 0 {
+            x_speed = x_speed / x_speed.abs();
+        }
+        if y_speed != 0 {
+            y_speed = y_speed / y_speed.abs();
+        }
 
-pub fn unencode_speed(vel: u16) -> (i8, i8) {
-    let x_speed: i8 = (vel & 0xff) as i8;
-    let y_speed: i8 = ((vel >> 8) & 0xff) as i8;
-    return (x_speed, y_speed);
+        return (x_speed, y_speed);
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

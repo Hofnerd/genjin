@@ -32,13 +32,11 @@ impl<'a> System<'a> for Physics {
                     x_speed += 1;
                 }
 
-                if y_speed > 0 {
-                    y_speed -= 1;
-                } else if y_speed < 0 {
+                if y_speed < 0 {
                     y_speed += 1;
                 }
 
-                vel.speed = encode_speed(x_speed, y_speed);
+                vel.encode_speed(x_speed, y_speed);
 
                 match grav {
                     Some(grav) => match coll {
