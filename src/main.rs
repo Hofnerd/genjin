@@ -90,6 +90,8 @@ pub fn main() -> Result<(), String> {
         .with(Velocity {
             speed: 0,
             max_speed: 10,
+            acc: 3,
+            last_dir: None,
         })
         .with(Position {
             point: Point::new(0, 0),
@@ -163,8 +165,7 @@ pub fn main() -> Result<(), String> {
     let mut y_ctrl: i8 = 0;
 
     'running: loop {
-        let mut action: Option<ActionCommand> = None;
-
+        let mut shoot_flag: bool = false;
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -179,14 +180,14 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    action = Some(ActionCommand::Shoot);
+                    shoot_flag = true;
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Right),
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl = 3;
+                    x_ctrl = 1;
                 }
 
                 Event::KeyDown {
@@ -194,7 +195,7 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    x_ctrl = -3;
+                    x_ctrl = -1;
                 }
 
                 Event::KeyDown {
@@ -202,14 +203,14 @@ pub fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
-                    y_ctrl = -3;
+                    y_ctrl = -1;
                 }
 
                 Event::KeyDown {
                     keycode: Some(Keycode::Down),
                     repeat: false,
                     ..
-                } => y_ctrl = 3,
+                } => y_ctrl = 1,
 
                 Event::KeyUp {
                     keycode: Some(Keycode::Right),
@@ -242,13 +243,22 @@ pub fn main() -> Result<(), String> {
                 } => {
                     y_ctrl = 0;
                 }
+
                 _ => {}
             }
         }
 
+        let mut action: Option<ActionCommand> = None;
+        if shoot_flag {
+            action = Some(ActionCommand::Shoot(Direction::MoveDelta {
+                x: x_ctrl,
+                y: y_ctrl,
+            }));
+        }
+
         let movement_command = Some(MovementCommand::Move(Direction::MoveDelta {
-            x_delta: x_ctrl,
-            y_delta: y_ctrl,
+            x: x_ctrl,
+            y: y_ctrl,
         }));
 
         *world.write_resource() = movement_command;

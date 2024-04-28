@@ -2,7 +2,7 @@ use crate::rect;
 use sdl2::rect::Rect;
 use specs::prelude::*;
 
-use crate::commands::ActionCommand;
+use crate::commands::*;
 
 use crate::entity_components::*;
 use crate::entity_flags::*;
@@ -30,27 +30,45 @@ impl<'a> System<'a> for ActionSys {
 
         (&data.1, &data.2, &data.3)
             .par_join()
-            .for_each(|(_, pos, _)| match action {
-                ActionCommand::Shoot => {
-                    let bullet = entity.create();
-
-                    updater.insert(
-                        bullet,
-                        Velocity {
-                            speed: 30,
+            .for_each(|(_, pos, vel)| match action {
+                ActionCommand::Shoot(dir) => match dir {
+                    Direction::MoveDelta { x, y } => {
+                        let bullet = entity.create();
+                        let mut b_vel: Velocity = Velocity {
+                            speed: 0,
                             max_speed: 100,
-                        },
-                    );
-                    updater.insert(
-                        bullet,
-                        Sprite {
-                            spritesheet: 1,
-                            region: rect!(0, 0, 5, 5),
-                        },
-                    );
-                    updater.insert(bullet, Life { life: 10 });
-                    updater.insert(bullet, pos.clone());
-                }
+                            acc: 30,
+                            last_dir: None,
+                        };
+
+                        let mut x_tmp = *x;
+                        if *x == 0 && *y == 0 {
+                            match vel.last_dir {
+                                Some(vel_dir) => match vel_dir {
+                                    Direction::MoveDelta { x: vel_x, y: _ } => {
+                                        x_tmp = vel_x;
+                                    }
+                                },
+                                None => {
+                                    x_tmp = 1;
+                                }
+                            }
+                        }
+
+                        b_vel.encode_speed(x_tmp * (b_vel.acc as i8), y * (b_vel.acc as i8));
+
+                        updater.insert(bullet, b_vel);
+                        updater.insert(
+                            bullet,
+                            Sprite {
+                                spritesheet: 1,
+                                region: rect!(0, 0, 5, 5),
+                            },
+                        );
+                        updater.insert(bullet, Life { life: 10 });
+                        updater.insert(bullet, pos.clone());
+                    }
+                },
             });
     }
 }

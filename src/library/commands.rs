@@ -6,5 +6,5 @@ pub enum MovementCommand {
 }
 
 pub enum ActionCommand {
-    Shoot,
+    Shoot(Direction),
 }

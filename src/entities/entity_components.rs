@@ -33,6 +33,8 @@ pub struct Life {
 pub struct Velocity {
     pub speed: u16,
     pub max_speed: i8,
+    pub acc: u32,
+    pub last_dir: Option<Direction>,
 }
 
 impl Velocity {
@@ -61,6 +63,7 @@ impl Velocity {
         let y_speed: i8 = ((vel >> 8) & 0xff) as i8;
         return (x_speed, y_speed);
     }
+
     pub fn normalize_speed(&self) -> (i8, i8) {
         let (mut x_speed, mut y_speed) = self.unencode_speed();
 
@@ -77,7 +80,7 @@ impl Velocity {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
-    MoveDelta { x_delta: i8, y_delta: i8 },
+    MoveDelta { x: i8, y: i8 },
 }
 
 #[derive(Component, Debug, Clone, PartialEq, Eq)]
