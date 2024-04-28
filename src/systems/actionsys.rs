@@ -65,8 +65,16 @@ impl<'a> System<'a> for ActionSys {
                                 region: rect!(0, 0, 5, 5),
                             },
                         );
-                        updater.insert(bullet, Life { life: 10 });
+                        updater.insert(bullet, DecayLife { life: 10 });
                         updater.insert(bullet, pos.clone());
+                        updater.insert(
+                            bullet,
+                            Damage {
+                                dmg: 10,
+                                dmg_box: rect!(0, 0, 5, 5),
+                            },
+                        );
+                        updater.insert(bullet, SingleDamage);
                     }
                 },
             });

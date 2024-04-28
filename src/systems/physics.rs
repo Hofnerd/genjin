@@ -36,8 +36,6 @@ impl<'a> System<'a> for Physics {
                     y_speed += 1;
                 }
 
-                vel.encode_speed(x_speed, y_speed);
-
                 match grav {
                     Some(grav) => match coll {
                         Some(coll) => {
@@ -65,8 +63,14 @@ impl<'a> System<'a> for Physics {
                         }
                         None => {}
                     },
-                    None => {}
+                    None => {
+                        if y_speed > 0 {
+                            y_speed -= 1;
+                        }
+                    }
                 }
+
+                vel.encode_speed(x_speed, y_speed);
             });
     }
 }

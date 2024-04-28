@@ -24,8 +24,22 @@ pub struct GravityAfflicted {
 
 #[derive(Component, Debug, Clone)]
 #[storage(VecStorage)]
-pub struct Life {
+pub struct DecayLife {
     pub life: u32,
+}
+
+#[derive(Component, Debug, Clone)]
+#[storage(VecStorage)]
+pub struct Health {
+    pub hp: u32,
+    pub hurt_box: Rect,
+}
+
+#[derive(Component, Debug, Clone)]
+#[storage(VecStorage)]
+pub struct Damage {
+    pub dmg: u32,
+    pub dmg_box: Rect,
 }
 
 #[derive(Component, Debug, Clone)]

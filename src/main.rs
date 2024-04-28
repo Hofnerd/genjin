@@ -8,6 +8,7 @@ use library::*;
 use sdl2::rect::Rect;
 use std::time::Duration;
 use systems::actionsys::ActionSys;
+use systems::damagesys::DamageSys;
 use systems::decaysys::DecaySys;
 use systems::gravitysys::GravitySys;
 use systems::*;
@@ -59,6 +60,7 @@ pub fn main() -> Result<(), String> {
             &["Keyboard", "GravitySys", "CollisionSys"],
         )
         .with(DecaySys, "DecaySys", &[])
+        .with(DamageSys, "DamageSys", &[])
         .with(ActionSys, "ActionSys", &[])
         .build();
 
@@ -82,11 +84,11 @@ pub fn main() -> Result<(), String> {
     world
         .create_entity()
         .with(KeyboardControlled)
-        .with(GravityAfflicted {
+        /*.with(GravityAfflicted {
             max_vel: 20,
             grounded: false,
             grounded_rect: None,
-        })
+        })*/
         .with(Velocity {
             speed: 0,
             max_speed: 10,
@@ -104,6 +106,10 @@ pub fn main() -> Result<(), String> {
             col_box: rect!(10, 10, 16, 36),
         })
         .with(Player)
+        .with(Health {
+            hp: 100,
+            hurt_box: rect!(10, 10, 16, 36),
+        })
         .build();
 
     world
@@ -117,6 +123,21 @@ pub fn main() -> Result<(), String> {
         .with(Sprite {
             spritesheet: 2,
             region: rect!(0, 0, 100, 20),
+        })
+        .build();
+
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(100, 0),
+        })
+        .with(Sprite {
+            spritesheet: 2,
+            region: rect!(0, 0, 10, 20),
+        })
+        .with(Health {
+            hp: 100,
+            hurt_box: rect!(0, 0, 10, 20),
         })
         .build();
 
