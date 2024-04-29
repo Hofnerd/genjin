@@ -8,6 +8,19 @@ pub struct Position {
     pub point: Point,
 }
 
+impl Position {
+    pub fn translate_coordinate(&mut self, screen: ScreenSize) {
+        match screen {
+            ScreenSize::Size {
+                width: w,
+                height: h,
+            } => {
+                self.point = self.point - Point::new(w as i32 / 2, h as i32 / 2);
+            }
+        };
+    }
+}
+
 #[derive(Component, Debug, Clone)]
 #[storage(VecStorage)]
 pub struct Collideable {
@@ -97,11 +110,17 @@ pub enum Direction {
     MoveDelta { x: i8, y: i8 },
 }
 
-#[derive(Component, Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum ScreenSize {
+    Size { width: u32, height: u32 },
+}
+
+#[derive(Component, Debug, Clone)]
 #[storage(VecStorage)]
 pub struct Sprite {
     pub spritesheet: usize,
     pub region: Rect,
+    pub rotation: f64,
 }
 
 #[derive(Component, Debug)]

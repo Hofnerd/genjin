@@ -29,7 +29,16 @@ pub fn render(
             current_frame.width(),
             current_frame.height(),
         );
-        canvas.copy(&textures[sprite.spritesheet], current_frame, screen_rect)?;
+
+        canvas.copy_ex(
+            &textures[sprite.spritesheet],
+            current_frame,
+            screen_rect,
+            sprite.rotation,
+            None,
+            false,
+            false,
+        )?;
     }
 
     canvas.present();

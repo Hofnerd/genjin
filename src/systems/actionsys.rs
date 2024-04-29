@@ -63,6 +63,7 @@ impl<'a> System<'a> for ActionSys {
                             Sprite {
                                 spritesheet: 1,
                                 region: rect!(0, 0, 5, 5),
+                                rotation: 0.0,
                             },
                         );
                         updater.insert(bullet, DecayLife { life: 10 });

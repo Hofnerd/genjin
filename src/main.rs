@@ -4,6 +4,7 @@ mod systems;
 
 use collisionsys::CollisionSys;
 use entities::*;
+use library::globalcomponents::ScreenInfo;
 use library::*;
 use sdl2::rect::Rect;
 use std::time::Duration;
@@ -11,6 +12,7 @@ use systems::actionsys::ActionSys;
 use systems::damagesys::DamageSys;
 use systems::decaysys::DecaySys;
 use systems::gravitysys::GravitySys;
+use systems::mousesys::MouseSys;
 use systems::*;
 
 use commands::*;
@@ -62,6 +64,7 @@ pub fn main() -> Result<(), String> {
         .with(DecaySys, "DecaySys", &[])
         .with(DamageSys, "DamageSys", &[])
         .with(ActionSys, "ActionSys", &[])
+        .with(MouseSys, "MouseSys", &[])
         .build();
 
     let mut event_pump = sdl_context.event_pump()?;
@@ -72,8 +75,19 @@ pub fn main() -> Result<(), String> {
 
     let movement_command: Option<MovementCommand> = None;
     let action_command: Option<ActionCommand> = None;
+    let mouse_command: Option<MouseCommand> = None;
+
+    let screeninfo = Some(ScreenInfo {
+        screen_size: ScreenSize::Size {
+            width: WINDOW_WIDTH,
+            height: WINDOW_HEIGHT,
+        },
+    });
+
     world.insert(movement_command);
     world.insert(action_command);
+    world.insert(mouse_command);
+    world.insert(screeninfo);
 
     let textures = [
         tc.load_texture("assets/reaper.png")?,
@@ -101,6 +115,7 @@ pub fn main() -> Result<(), String> {
         .with(Sprite {
             spritesheet: 0,
             region: rect!(0, 0, 26, 36),
+            rotation: 0.0,
         })
         .with(Collideable {
             col_box: rect!(10, 10, 16, 36),
@@ -123,6 +138,7 @@ pub fn main() -> Result<(), String> {
         .with(Sprite {
             spritesheet: 2,
             region: rect!(0, 0, 100, 20),
+            rotation: 0.0,
         })
         .build();
 
@@ -134,11 +150,25 @@ pub fn main() -> Result<(), String> {
         .with(Sprite {
             spritesheet: 2,
             region: rect!(0, 0, 10, 20),
+            rotation: 0.0,
         })
         .with(Health {
             hp: 100,
             hurt_box: rect!(0, 0, 10, 20),
         })
+        .build();
+
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(0, 0),
+        })
+        .with(Sprite {
+            spritesheet: 2,
+            region: rect!(0, 0, 10, 20),
+            rotation: 0.0,
+        })
+        .with(TempTestFlag)
         .build();
 
     // Bound the world so that entities cant leave the system
@@ -277,6 +307,8 @@ pub fn main() -> Result<(), String> {
             }));
         }
 
+        let m_state = event_pump.mouse_state();
+
         let movement_command = Some(MovementCommand::Move(Direction::MoveDelta {
             x: x_ctrl,
             y: y_ctrl,
@@ -284,6 +316,7 @@ pub fn main() -> Result<(), String> {
 
         *world.write_resource() = movement_command;
         *world.write_resource() = action;
+        *world.write_resource() = Some(MouseCommand::Cmd(m_state));
 
         dispatcher.dispatch(&mut world);
         world.maintain();
