@@ -47,18 +47,26 @@ impl<'a> System<'a> for MouseSys {
                             sprite.region.width(),
                             sprite.region.height(),
                         );
+                        match &mut sprite.rotation {
+                            Some(rot) => {
+                                let point = match rot.rot_point {
+                                    Some(p) => {
+                                        Point::new(rect.top_left().x + p.x, rect.top_left().y + p.y)
+                                    }
+                                    None => rect.center(),
+                                };
 
-                        let point = match sprite.rot_point {
-                            Some(p) => Point::new(rect.top_left().x + p.x, rect.top_left().y + p.y),
-                            None => rect.center(),
-                        };
+                                let rise: f64 = (mpnt.point.y() as f64) - (point.y() as f64);
+                                let run: f64 = (mpnt.point.x() as f64) - (point.x() as f64);
 
-                        let rise: f64 = (mpnt.point.y() as f64) - (point.y() as f64);
-                        let run: f64 = (mpnt.point.x() as f64) - (point.x() as f64);
+                                rot.rise = rise;
+                                rot.run = run;
+                                rot.rotation = rise.atan2(run);
+                                rot.rotation = rot.rotation.to_degrees();
+                            }
 
-                        sprite.rotation = rise.atan2(run);
-                        sprite.rotation = sprite.rotation.to_degrees();
-                        //sprite.rotation = sprite.rotation + 90.0;
+                            None => continue,
+                        }
                     }
                 }
             });

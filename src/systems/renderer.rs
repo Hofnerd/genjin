@@ -31,15 +31,30 @@ pub fn render(
                 current_frame.height(),
             );
 
-            canvas.copy_ex(
-                &textures[sprite.spritesheet],
-                current_frame,
-                screen_rect,
-                sprite.rotation,
-                sprite.rot_point,
-                false,
-                false,
-            )?;
+            match &sprite.rotation {
+                Some(rot) => {
+                    canvas.copy_ex(
+                        &textures[sprite.spritesheet],
+                        current_frame,
+                        screen_rect,
+                        rot.rotation,
+                        rot.rot_point,
+                        false,
+                        false,
+                    )?;
+                }
+                None => {
+                    canvas.copy_ex(
+                        &textures[sprite.spritesheet],
+                        current_frame,
+                        screen_rect,
+                        0.0,
+                        None,
+                        false,
+                        false,
+                    )?;
+                }
+            };
         }
     }
 

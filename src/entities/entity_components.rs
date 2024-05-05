@@ -104,6 +104,13 @@ pub struct Sprite {
     pub spritesheet: usize,
     pub region: Rect,
     pub mouse_rot_flag: bool,
+    pub rotation: Option<Rotation>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Rotation {
+    pub rise: f64,
+    pub run: f64,
     pub rotation: f64,
     pub rot_point: Option<Point>,
 }

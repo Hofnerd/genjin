@@ -100,15 +100,18 @@ pub fn main() -> Result<(), String> {
         spritesheet: 0,
         region: rect!(0, 0, 26, 36),
         mouse_rot_flag: false,
-        rotation: 0.0,
-        rot_point: None,
+        rotation: None,
     });
     sprite_vec.push(Sprite {
         spritesheet: 2,
         region: rect!(0, 0, 30, 10),
         mouse_rot_flag: true,
-        rotation: 0.0,
-        rot_point: Some(Point::new(5, 0)),
+        rotation: Some(Rotation {
+            rise: 0.0,
+            run: 0.0,
+            rotation: 0.0,
+            rot_point: Some(Point::new(0, 0)),
+        }),
     });
 
     world

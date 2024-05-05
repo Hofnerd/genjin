@@ -65,8 +65,7 @@ impl<'a> System<'a> for ActionSys {
                                     spritesheet: 1,
                                     region: rect!(0, 0, 5, 5),
                                     mouse_rot_flag: false,
-                                    rotation: 0.0,
-                                    rot_point: None,
+                                    rotation: None,
                                 }],
                             },
                         );
