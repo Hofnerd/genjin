@@ -1,4 +1,4 @@
-use sdl2::rect::Point;
+use sdl2::rect::{Point, Rect};
 use specs::prelude::*;
 
 use crate::commands::*;
@@ -12,7 +12,7 @@ impl<'a> System<'a> for MouseSys {
     type SystemData = (
         ReadExpect<'a, Option<MouseCommand>>,
         ReadStorage<'a, Position>,
-        WriteStorage<'a, Sprite>,
+        WriteStorage<'a, SpriteVec>,
         ReadStorage<'a, TempTestFlag>,
         ReadExpect<'a, Option<ScreenInfo>>,
     );
@@ -30,18 +30,36 @@ impl<'a> System<'a> for MouseSys {
 
         (&data.1, &mut data.2, &data.3)
             .par_join()
-            .for_each(|(pos, sprite, _)| match m_cmd {
+            .for_each(|(pos, sprites, _)| match m_cmd {
                 MouseCommand::Cmd(m_state) => {
                     let mut mpnt = Position {
                         point: Point::new(m_state.x(), m_state.y()),
                     };
                     mpnt.translate_coordinate(screen_info.screen_size);
 
-                    let rise: f64 = (mpnt.point.y() as f64) - (pos.point.y() as f64);
-                    let run: f64 = (mpnt.point.x() as f64) - (pos.point.x() as f64);
+                    for sprite in sprites
+                        .sprite_vec
+                        .iter_mut()
+                        .filter(|sprite| sprite.mouse_rot_flag == true)
+                    {
+                        let rect = Rect::from_center(
+                            pos.point,
+                            sprite.region.width(),
+                            sprite.region.height(),
+                        );
 
-                    sprite.rotation = rise.atan2(run);
-                    sprite.rotation = sprite.rotation.to_degrees();
+                        let point = match sprite.rot_point {
+                            Some(p) => Point::new(rect.top_left().x + p.x, rect.top_left().y + p.y),
+                            None => rect.center(),
+                        };
+
+                        let rise: f64 = (mpnt.point.y() as f64) - (point.y() as f64);
+                        let run: f64 = (mpnt.point.x() as f64) - (point.x() as f64);
+
+                        sprite.rotation = rise.atan2(run);
+                        sprite.rotation = sprite.rotation.to_degrees();
+                        //sprite.rotation = sprite.rotation + 90.0;
+                    }
                 }
             });
     }

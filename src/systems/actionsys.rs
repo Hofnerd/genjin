@@ -60,10 +60,14 @@ impl<'a> System<'a> for ActionSys {
                         updater.insert(bullet, b_vel);
                         updater.insert(
                             bullet,
-                            Sprite {
-                                spritesheet: 1,
-                                region: rect!(0, 0, 5, 5),
-                                rotation: 0.0,
+                            SpriteVec {
+                                sprite_vec: vec![Sprite {
+                                    spritesheet: 1,
+                                    region: rect!(0, 0, 5, 5),
+                                    mouse_rot_flag: false,
+                                    rotation: 0.0,
+                                    rot_point: None,
+                                }],
                             },
                         );
                         updater.insert(bullet, DecayLife { life: 10 });

@@ -1,3 +1,4 @@
+use crate::ScreenSize;
 use sdl2::rect::{Point, Rect};
 use specs::prelude::*;
 use specs_derive::Component;
@@ -90,19 +91,6 @@ impl Velocity {
         let y_speed: i8 = ((vel >> 8) & 0xff) as i8;
         return (x_speed, y_speed);
     }
-
-    pub fn normalize_speed(&self) -> (i8, i8) {
-        let (mut x_speed, mut y_speed) = self.unencode_speed();
-
-        if x_speed != 0 {
-            x_speed = x_speed / x_speed.abs();
-        }
-        if y_speed != 0 {
-            y_speed = y_speed / y_speed.abs();
-        }
-
-        return (x_speed, y_speed);
-    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -110,17 +98,20 @@ pub enum Direction {
     MoveDelta { x: i8, y: i8 },
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum ScreenSize {
-    Size { width: u32, height: u32 },
-}
-
 #[derive(Component, Debug, Clone)]
 #[storage(VecStorage)]
 pub struct Sprite {
     pub spritesheet: usize,
     pub region: Rect,
+    pub mouse_rot_flag: bool,
     pub rotation: f64,
+    pub rot_point: Option<Point>,
+}
+
+#[derive(Component, Debug, Clone)]
+#[storage(VecStorage)]
+pub struct SpriteVec {
+    pub sprite_vec: Vec<Sprite>,
 }
 
 #[derive(Component, Debug)]

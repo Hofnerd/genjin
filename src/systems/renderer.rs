@@ -7,7 +7,7 @@ use specs::prelude::*;
 
 use crate::entity_components::*;
 
-pub type SystemData<'a> = (ReadStorage<'a, Position>, ReadStorage<'a, Sprite>);
+pub type SystemData<'a> = (ReadStorage<'a, Position>, ReadStorage<'a, SpriteVec>);
 
 pub fn render(
     canvas: &mut WindowCanvas,
@@ -20,25 +20,27 @@ pub fn render(
 
     let (width, height) = canvas.output_size()?;
 
-    for (pos, sprite) in (&data.0, &data.1).join() {
-        let current_frame = sprite.region;
+    for (pos, sprites) in (&data.0, &data.1).join() {
+        for sprite in sprites.sprite_vec.iter() {
+            let current_frame = sprite.region;
 
-        let screen_position = pos.point + Point::new(width as i32 / 2, height as i32 / 2);
-        let screen_rect = Rect::from_center(
-            screen_position,
-            current_frame.width(),
-            current_frame.height(),
-        );
+            let screen_position = pos.point + Point::new(width as i32 / 2, height as i32 / 2);
+            let screen_rect = Rect::from_center(
+                screen_position,
+                current_frame.width(),
+                current_frame.height(),
+            );
 
-        canvas.copy_ex(
-            &textures[sprite.spritesheet],
-            current_frame,
-            screen_rect,
-            sprite.rotation,
-            None,
-            false,
-            false,
-        )?;
+            canvas.copy_ex(
+                &textures[sprite.spritesheet],
+                current_frame,
+                screen_rect,
+                sprite.rotation,
+                sprite.rot_point,
+                false,
+                false,
+            )?;
+        }
     }
 
     canvas.present();

@@ -4,7 +4,7 @@ mod systems;
 
 use collisionsys::CollisionSys;
 use entities::*;
-use library::globalcomponents::ScreenInfo;
+use library::globalcomponents::*;
 use library::*;
 use sdl2::rect::Rect;
 use std::time::Duration;
@@ -30,7 +30,8 @@ use specs::prelude::*;
 
 pub const WINDOW_HEIGHT: u32 = 600;
 pub const WINDOW_WIDTH: u32 = 800;
-pub const REFRESH_RATE: u32 = 60;
+pub const SIM_RATE: Duration = Duration::new(0, 1_000_000_000u32 / 120);
+pub const FRAME_RATE: Duration = Duration::new(0, 1_000_000_000u32 / 60);
 
 pub fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
@@ -94,6 +95,21 @@ pub fn main() -> Result<(), String> {
         tc.load_texture("assets/bullet.png")?,
         tc.load_texture("assets/block.png")?,
     ];
+    let mut sprite_vec = Vec::<Sprite>::new();
+    sprite_vec.push(Sprite {
+        spritesheet: 0,
+        region: rect!(0, 0, 26, 36),
+        mouse_rot_flag: false,
+        rotation: 0.0,
+        rot_point: None,
+    });
+    sprite_vec.push(Sprite {
+        spritesheet: 2,
+        region: rect!(0, 0, 30, 10),
+        mouse_rot_flag: true,
+        rotation: 0.0,
+        rot_point: Some(Point::new(15, 10)),
+    });
 
     world
         .create_entity()
@@ -112,11 +128,7 @@ pub fn main() -> Result<(), String> {
         .with(Position {
             point: Point::new(0, 0),
         })
-        .with(Sprite {
-            spritesheet: 0,
-            region: rect!(0, 0, 26, 36),
-            rotation: 0.0,
-        })
+        .with(SpriteVec { sprite_vec })
         .with(Collideable {
             col_box: rect!(10, 10, 16, 36),
         })
@@ -125,9 +137,10 @@ pub fn main() -> Result<(), String> {
             hp: 100,
             hurt_box: rect!(10, 10, 16, 36),
         })
+        .with(TempTestFlag)
         .build();
 
-    world
+    /*world
         .create_entity()
         .with(Position {
             point: Point::new(100, 100),
@@ -138,7 +151,9 @@ pub fn main() -> Result<(), String> {
         .with(Sprite {
             spritesheet: 2,
             region: rect!(0, 0, 100, 20),
+            mouse_rot_flag: true,
             rotation: 0.0,
+            rot_point: None,
         })
         .build();
 
@@ -150,26 +165,15 @@ pub fn main() -> Result<(), String> {
         .with(Sprite {
             spritesheet: 2,
             region: rect!(0, 0, 10, 20),
+            mouse_rot_flag: true,
             rotation: 0.0,
+            rot_point: None,
         })
         .with(Health {
             hp: 100,
             hurt_box: rect!(0, 0, 10, 20),
         })
-        .build();
-
-    world
-        .create_entity()
-        .with(Position {
-            point: Point::new(0, 0),
-        })
-        .with(Sprite {
-            spritesheet: 2,
-            region: rect!(0, 0, 10, 20),
-            rotation: 0.0,
-        })
-        .with(TempTestFlag)
-        .build();
+        .build();*/
 
     // Bound the world so that entities cant leave the system
     world
@@ -328,7 +332,7 @@ pub fn main() -> Result<(), String> {
             world.system_data(),
         )?;
 
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / REFRESH_RATE));
+        ::std::thread::sleep(FRAME_RATE);
     }
 
     return Ok(());
