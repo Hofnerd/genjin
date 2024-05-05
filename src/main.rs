@@ -108,7 +108,7 @@ pub fn main() -> Result<(), String> {
         region: rect!(0, 0, 30, 10),
         mouse_rot_flag: true,
         rotation: 0.0,
-        rot_point: Some(Point::new(15, 10)),
+        rot_point: Some(Point::new(5, 0)),
     });
 
     world
