@@ -13,6 +13,7 @@ use systems::damagesys::DamageSys;
 use systems::decaysys::DecaySys;
 use systems::gravitysys::GravitySys;
 use systems::mousesys::MouseSys;
+use systems::projectilesys::ProjectileSys;
 use systems::*;
 
 use commands::*;
@@ -55,12 +56,17 @@ pub fn main() -> Result<(), String> {
 
     let mut dispatcher = DispatcherBuilder::new()
         .with(Keyboard, "Keyboard", &[])
-        .with(GravitySys, "GravitySys", &["Keyboard"])
-        .with(CollisionSys, "CollisionSys", &["Keyboard", "GravitySys"])
+        .with(ProjectileSys, "ProjectileSys", &[])
+        .with(GravitySys, "GravitySys", &["Keyboard", "ProjectileSys"])
+        .with(
+            CollisionSys,
+            "CollisionSys",
+            &["Keyboard", "ProjectileSys", "GravitySys"],
+        )
         .with(
             Physics,
             "Physics",
-            &["Keyboard", "GravitySys", "CollisionSys"],
+            &["Keyboard", "ProjectileSys", "GravitySys", "CollisionSys"],
         )
         .with(DecaySys, "DecaySys", &[])
         .with(DamageSys, "DamageSys", &[])
@@ -142,41 +148,6 @@ pub fn main() -> Result<(), String> {
         })
         .with(TempTestFlag)
         .build();
-
-    /*world
-        .create_entity()
-        .with(Position {
-            point: Point::new(100, 100),
-        })
-        .with(Collideable {
-            col_box: rect!(0, 0, 100, 20),
-        })
-        .with(Sprite {
-            spritesheet: 2,
-            region: rect!(0, 0, 100, 20),
-            mouse_rot_flag: true,
-            rotation: 0.0,
-            rot_point: None,
-        })
-        .build();
-
-    world
-        .create_entity()
-        .with(Position {
-            point: Point::new(100, 0),
-        })
-        .with(Sprite {
-            spritesheet: 2,
-            region: rect!(0, 0, 10, 20),
-            mouse_rot_flag: true,
-            rotation: 0.0,
-            rot_point: None,
-        })
-        .with(Health {
-            hp: 100,
-            hurt_box: rect!(0, 0, 10, 20),
-        })
-        .build();*/
 
     // Bound the world so that entities cant leave the system
     world
@@ -306,15 +277,20 @@ pub fn main() -> Result<(), String> {
             }
         }
 
+        let m_state = event_pump.mouse_state();
+
         let mut action: Option<ActionCommand> = None;
         if shoot_flag {
-            action = Some(ActionCommand::Shoot(Direction::MoveDelta {
-                x: x_ctrl,
-                y: y_ctrl,
-            }));
+            action = Some(ActionCommand::Shoot(
+                Direction::MoveDelta {
+                    x: x_ctrl,
+                    y: y_ctrl,
+                },
+                Position {
+                    point: Point::new(m_state.x(), m_state.y()),
+                },
+            ));
         }
-
-        let m_state = event_pump.mouse_state();
 
         let movement_command = Some(MovementCommand::Move(Direction::MoveDelta {
             x: x_ctrl,

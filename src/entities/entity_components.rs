@@ -121,6 +121,12 @@ pub struct SpriteVec {
     pub sprite_vec: Vec<Sprite>,
 }
 
+#[derive(Component, Debug, Clone)]
+#[storage(VecStorage)]
+pub struct ProjectileProperties {
+    pub destination: Point,
+}
+
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
 pub struct MovementAnimation {

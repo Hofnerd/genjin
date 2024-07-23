@@ -17,6 +17,7 @@ impl<'a> System<'a> for ActionSys {
         ReadStorage<'a, Velocity>,
         Entities<'a>,
         Read<'a, LazyUpdate>,
+        ReadStorage<'a, ProjectileProperties>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -30,32 +31,16 @@ impl<'a> System<'a> for ActionSys {
 
         (&data.1, &data.2, &data.3)
             .par_join()
-            .for_each(|(_, pos, vel)| match action {
-                ActionCommand::Shoot(dir) => match dir {
-                    Direction::MoveDelta { x, y } => {
+            .for_each(|(_, pos, _)| match action {
+                ActionCommand::Shoot(dir, mpos) => match (dir, mpos) {
+                    (_, mpos) => {
                         let bullet = entity.create();
-                        let mut b_vel: Velocity = Velocity {
+                        let b_vel: Velocity = Velocity {
                             speed: 0,
                             max_speed: 100,
                             acc: 30,
                             last_dir: None,
                         };
-
-                        let mut x_tmp = *x;
-                        if *x == 0 && *y == 0 {
-                            match vel.last_dir {
-                                Some(vel_dir) => match vel_dir {
-                                    Direction::MoveDelta { x: vel_x, y: _ } => {
-                                        x_tmp = vel_x;
-                                    }
-                                },
-                                None => {
-                                    x_tmp = 1;
-                                }
-                            }
-                        }
-
-                        b_vel.encode_speed(x_tmp * (b_vel.acc as i8), y * (b_vel.acc as i8));
 
                         updater.insert(bullet, b_vel);
                         updater.insert(
@@ -76,6 +61,12 @@ impl<'a> System<'a> for ActionSys {
                             Damage {
                                 dmg: 10,
                                 dmg_box: rect!(0, 0, 5, 5),
+                            },
+                        );
+                        updater.insert(
+                            bullet,
+                            ProjectileProperties {
+                                destination: mpos.point,
                             },
                         );
                         updater.insert(bullet, SingleDamage);

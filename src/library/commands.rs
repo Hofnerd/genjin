@@ -1,6 +1,6 @@
 use sdl2::mouse::MouseState;
 
-use crate::entity_components::Direction;
+use crate::{entity_components::Direction, Position};
 
 #[derive(Debug)]
 pub enum MovementCommand {
@@ -8,7 +8,7 @@ pub enum MovementCommand {
 }
 
 pub enum ActionCommand {
-    Shoot(Direction),
+    Shoot(Direction, Position),
 }
 
 pub enum MouseCommand {
