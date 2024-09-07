@@ -5,7 +5,6 @@ pub mod damagesys;
 pub mod decaysys;
 pub mod gravitysys;
 pub mod keyboard;
-pub mod mousesys;
 pub mod physics;
 pub mod projectilesys;
 pub mod renderer;

@@ -32,8 +32,8 @@ impl<'a> System<'a> for ActionSys {
         (&data.1, &data.2, &data.3)
             .par_join()
             .for_each(|(_, pos, _)| match action {
-                ActionCommand::Shoot(dir, mpos) => match (dir, mpos) {
-                    (_, mpos) => {
+                ActionCommand::Shoot(dir) => match dir {
+                    dir => {
                         let bullet = entity.create();
                         let b_vel: Velocity = Velocity {
                             speed: 0,
@@ -49,7 +49,6 @@ impl<'a> System<'a> for ActionSys {
                                 sprite_vec: vec![Sprite {
                                     spritesheet: 1,
                                     region: rect!(0, 0, 5, 5),
-                                    mouse_rot_flag: false,
                                     rotation: None,
                                 }],
                             },
@@ -66,7 +65,8 @@ impl<'a> System<'a> for ActionSys {
                         updater.insert(
                             bullet,
                             ProjectileProperties {
-                                destination: mpos.point,
+                                direction: dir.clone(),
+                                owner: -1,
                             },
                         );
                         updater.insert(bullet, SingleDamage);

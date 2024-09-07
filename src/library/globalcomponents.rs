@@ -1,3 +1,4 @@
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ScreenInfo {
     pub screen_size: ScreenSize,
 }

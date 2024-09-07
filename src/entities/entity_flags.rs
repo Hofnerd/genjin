@@ -12,7 +12,3 @@ pub struct Player;
 #[derive(Component, Debug, Clone)]
 #[storage(NullStorage)]
 pub struct SingleDamage;
-
-#[derive(Component, Debug, Clone)]
-#[storage(NullStorage)]
-pub struct TempTestFlag;
