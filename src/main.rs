@@ -6,6 +6,7 @@ use collisionsys::CollisionSys;
 use entities::*;
 use library::globalcomponents::*;
 use library::*;
+use sdl2::gfx::framerate::FPSManager;
 use sdl2::rect::Rect;
 use std::time::Duration;
 use systems::actionsys::ActionSys;
@@ -132,6 +133,17 @@ pub fn main() -> Result<(), String> {
         })
         .build();
 
+    //*** GROUND COLLISION BLOCK ***/
+    world
+        .create_entity()
+        .with(Position {
+            point: Point::new(0, (WINDOW_HEIGHT as i32) - 200),
+        })
+        .with(Collideable {
+            col_box: rect!(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT),
+        })
+        .build();
+    //** **/
     // Bound the world so that entities cant leave the system
     world
         .create_entity()
@@ -172,6 +184,10 @@ pub fn main() -> Result<(), String> {
             col_box: rect!(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT),
         })
         .build();
+
+    let mut fps_man = FPSManager::new();
+
+    let _ = fps_man.set_framerate(60);
 
     let mut x_ctrl: i8 = 0;
     let mut y_ctrl: i8 = 0;
@@ -286,7 +302,7 @@ pub fn main() -> Result<(), String> {
             world.system_data(),
         )?;
 
-        ::std::thread::sleep(FRAME_RATE);
+        fps_man.delay();
     }
 
     return Ok(());
